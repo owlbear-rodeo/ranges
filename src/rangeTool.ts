@@ -21,53 +21,60 @@ let tokenInteraction: InteractionManager<Item> | null = null;
 let shader: Item | null = null;
 let grabOffset: Vector2 = { x: 0, y: 0 };
 let downTarget: Item | null = null;
+let labelOffset = -16;
 
 type Range = {
   radius: number;
   name: string;
   uniformColor: [number, number, number];
   uniformName: string;
+  color: string;
 };
 
 const ranges: Range[] = [
   {
     radius: 1,
     name: "Melee",
-    uniformColor: [0.38, 0.21, 1],
     uniformName: "melee",
+    uniformColor: [0.38, 0.21, 1],
+    color: "#6236FF",
   },
   {
     radius: 2,
     name: "Very Close",
-    uniformColor: [0, 0.56, 1],
     uniformName: "very_close",
+    uniformColor: [0, 0.56, 1],
+    color: "#0091FF",
   },
   {
     radius: 6,
     name: "Close",
-    uniformColor: [0.42, 0.83, 0],
     uniformName: "close",
+    uniformColor: [0.42, 0.83, 0],
+    color: "#6DD400",
   },
   {
     radius: 20,
     name: "Far",
-    uniformColor: [0.98, 0.39, 0.2],
     uniformName: "far",
+    uniformColor: [0.96, 0.7, 0],
+    color: "#F7B500",
   },
   {
     radius: 60,
     name: "Very Far",
-    uniformColor: [0.87, 0.12, 0.12],
     uniformName: "very_far",
+    uniformColor: [0.98, 0.39, 0.2],
+    color: "#FA6400",
   },
 ];
 
-function getRing(center: Vector2, radius: number, name: string) {
+function getRing(center: Vector2, radius: number, name: string, color: string) {
   return buildShape()
     .fillOpacity(0)
     .strokeWidth(2)
-    .strokeOpacity(0.5)
-    .strokeColor("white")
+    .strokeOpacity(0.8)
+    .strokeColor(color)
     .strokeDash([10, 10])
     .shapeType("CIRCLE")
     .position(center)
@@ -81,14 +88,23 @@ function getRing(center: Vector2, radius: number, name: string) {
     .build();
 }
 
-function getLabel(center: Vector2, radius: number, name: string) {
+function getLabel(
+  center: Vector2,
+  radius: number,
+  name: string,
+  color: string
+) {
   return buildLabel()
     .fillColor("white")
-    .fillOpacity(0.8)
+    .fillOpacity(1.0)
     .plainText(name)
-    .position(Math2.subtract(center, { x: 0, y: radius }))
+    .position(Math2.subtract(center, { x: 0, y: radius + labelOffset }))
     .pointerDirection("UP")
-    .backgroundOpacity(0)
+    .backgroundOpacity(0.5)
+    .backgroundColor(color)
+    .padding(4)
+    .cornerRadius(20)
+    .pointerHeight(0)
     .metadata({
       [metadataKey]: {
         radius: radius,
@@ -135,8 +151,8 @@ async function getRangeItems(center: Vector2): Promise<Item[]> {
   const items = [];
   for (const range of ranges) {
     const radius = getRadiusForRange(range, dpi);
-    items.push(getRing(center, radius, range.name));
-    items.push(getLabel(center, radius, range.name));
+    items.push(getRing(center, radius, range.name, range.color));
+    items.push(getLabel(center, radius, range.name, range.color));
   }
 
   return items;
@@ -260,7 +276,7 @@ export function createRangeTool() {
               const range = metadata.radius;
               item.position = Math2.subtract(event.pointerPosition, {
                 x: 0,
-                y: range,
+                y: range + labelOffset,
               });
             } else {
               item.position = event.pointerPosition;
