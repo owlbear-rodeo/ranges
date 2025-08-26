@@ -102,7 +102,7 @@ function getLabel(
     .pointerDirection("UP")
     .backgroundOpacity(0.5)
     .backgroundColor(color)
-    .padding(4)
+    .padding(8)
     .cornerRadius(20)
     .pointerHeight(0)
     .metadata({
