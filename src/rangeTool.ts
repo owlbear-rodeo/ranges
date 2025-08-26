@@ -178,17 +178,22 @@ function cleanup() {
   downTarget = null;
 }
 
-function finalizeMove() {
+async function finalizeMove() {
   if (tokenInteraction) {
     const final = tokenInteraction[0](() => {});
-    OBR.scene.items.updateItems([final.id], (items) => {
-      const item = items[0];
-      if (!item) {
-        return;
-      }
-      item.position = final.position;
-      if (!item.disableAutoZIndex) {
-        item.zIndex = Date.now();
+    const withAttachments = await OBR.scene.items.getItemAttachments([
+      final.id,
+    ]);
+    withAttachments.sort((a, b) => a.zIndex - b.zIndex);
+    await OBR.scene.items.updateItems(withAttachments, (items) => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.id === final.id) {
+          item.position = final.position;
+        }
+        if (!item.disableAutoZIndex) {
+          item.zIndex = Date.now() + i;
+        }
       }
     });
   }
