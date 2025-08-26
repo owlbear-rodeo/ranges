@@ -1,0 +1,10 @@
+{
+  "name": "Ranges",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "author": "Owlbear Rodeo",
+  "homepage_url": "https://extensions.owlbear.rodeo/ranges",
+  "icon": "/icon.svg",
+  "background_url": "/background.html",
+  "description": "Measure ranges with a simple range tool"
+}
