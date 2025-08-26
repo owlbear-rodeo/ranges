@@ -1,4 +1,5 @@
 import OBR, {
+  buildEffect,
   buildLabel,
   buildShape,
   isLabel,
@@ -9,6 +10,7 @@ import OBR, {
 } from "@owlbear-rodeo/sdk";
 import rangeIcon from "./range.svg";
 import { canUpdateItem } from "./permission";
+import rangeSksl from "./range.frag";
 
 const metadataKey = "rodeo.owlbear.ranges/metadata";
 type RangeMetadata = {
@@ -16,32 +18,47 @@ type RangeMetadata = {
 };
 let rangeInteraction: InteractionManager<Item[]> | null = null;
 let tokenInteraction: InteractionManager<Item> | null = null;
+let shader: Item | null = null;
 let grabOffset: Vector2 = { x: 0, y: 0 };
+let downTarget: Item | null = null;
 
-const ranges = [
+type Range = {
+  radius: number;
+  name: string;
+  uniformColor: [number, number, number];
+  uniformName: string;
+};
+
+const ranges: Range[] = [
   {
     radius: 1,
     name: "Melee",
+    uniformColor: [0.38, 0.21, 1],
+    uniformName: "melee",
   },
   {
     radius: 2,
     name: "Very Close",
+    uniformColor: [0, 0.56, 1],
+    uniformName: "very_close",
   },
   {
     radius: 6,
     name: "Close",
+    uniformColor: [0.42, 0.83, 0],
+    uniformName: "close",
   },
   {
     radius: 20,
     name: "Far",
+    uniformColor: [0.98, 0.39, 0.2],
+    uniformName: "far",
   },
   {
     radius: 60,
     name: "Very Far",
-  },
-  {
-    radius: Infinity,
-    name: "Out of Range",
+    uniformColor: [0.87, 0.12, 0.12],
+    uniformName: "very_far",
   },
 ];
 
@@ -77,7 +94,39 @@ function getLabel(center: Vector2, radius: number, name: string) {
         radius: radius,
       },
     })
+    .minViewScale(1)
     .layer("POPOVER")
+    .build();
+}
+
+function getRadiusForRange(range: Range, dpi: number) {
+  // Offset the ring by half a grid unit to account for the center of the grid
+  return range.radius * dpi + dpi / 2;
+}
+
+async function getShader(center: Vector2) {
+  const dpi = await OBR.scene.grid.getDpi();
+  return buildEffect()
+    .sksl(rangeSksl)
+    .effectType("VIEWPORT")
+    .position(center)
+    .layer("POINTER")
+    .zIndex(0)
+    .blendMode("COLOR")
+    .uniforms(
+      ranges.map((range) => ({
+        name: range.uniformName,
+        value: [
+          ...range.uniformColor,
+          getRadiusForRange(range, dpi),
+          0,
+          0,
+          0,
+          0,
+          0,
+        ],
+      }))
+    )
     .build();
 }
 
@@ -85,12 +134,7 @@ async function getRangeItems(center: Vector2): Promise<Item[]> {
   const dpi = await OBR.scene.grid.getDpi();
   const items = [];
   for (const range of ranges) {
-    // Skip the outer bounds
-    if (range.radius === Infinity) {
-      continue;
-    }
-    // Offset the ring by half a grid unit to account for the center of the grid
-    const radius = range.radius * dpi + dpi / 2;
+    const radius = getRadiusForRange(range, dpi);
     items.push(getRing(center, radius, range.name));
     items.push(getLabel(center, radius, range.name));
   }
@@ -98,7 +142,7 @@ async function getRangeItems(center: Vector2): Promise<Item[]> {
   return items;
 }
 
-function cancelInteractions() {
+function cleanup() {
   if (rangeInteraction) {
     const cancel = rangeInteraction[1];
     cancel();
@@ -108,6 +152,27 @@ function cancelInteractions() {
     const cancel = tokenInteraction[1];
     cancel();
     tokenInteraction = null;
+  }
+  if (shader) {
+    OBR.scene.local.deleteItems([shader.id]);
+    shader = null;
+  }
+  downTarget = null;
+}
+
+function finalizeMove() {
+  if (tokenInteraction) {
+    const final = tokenInteraction[0](() => {});
+    OBR.scene.items.updateItems([final.id], (items) => {
+      const item = items[0];
+      if (!item) {
+        return;
+      }
+      item.position = final.position;
+      if (!item.disableAutoZIndex) {
+        item.zIndex = Date.now();
+      }
+    });
   }
 }
 
@@ -130,8 +195,11 @@ export function createRangeTool() {
         },
       },
     ],
-    async onToolDragStart(_, event) {
-      cancelInteractions();
+    onToolClick() {
+      return false;
+    },
+    async onToolDown(_, event) {
+      cleanup();
 
       const tokenPosition =
         event.target && !event.target.locked && event.target.position;
@@ -151,23 +219,34 @@ export function createRangeTool() {
         event.target.type === "IMAGE" &&
         (await canUpdateItem(event.target))
       ) {
-        tokenInteraction = await OBR.interaction.startItemInteraction(
-          event.target
-        );
+        downTarget = event.target;
       }
+
+      shader = await getShader(initialPosition);
+      await OBR.scene.local.addItems([shader]);
 
       const rangeItems = await getRangeItems(initialPosition);
       rangeInteraction = await OBR.interaction.startItemInteraction(rangeItems);
     },
-    async onToolDragMove(_, event) {
-      if (tokenInteraction) {
-        const update = tokenInteraction[0];
-        const position = await OBR.scene.grid.snapPosition(
-          Math2.subtract(event.pointerPosition, grabOffset)
+    async onToolDragStart() {
+      if (downTarget) {
+        tokenInteraction = await OBR.interaction.startItemInteraction(
+          downTarget
         );
-        update?.((token) => {
-          token.position = position;
-        });
+      }
+    },
+    async onToolDragMove(_, event) {
+      // Check the down target first as that's the earliest indicator of a valid target
+      if (downTarget) {
+        if (tokenInteraction) {
+          const update = tokenInteraction[0];
+          const position = await OBR.scene.grid.snapPosition(
+            Math2.subtract(event.pointerPosition, grabOffset)
+          );
+          update?.((token) => {
+            token.position = position;
+          });
+        }
       } else if (rangeInteraction) {
         const update = rangeInteraction[0];
         update?.((items) => {
@@ -188,29 +267,30 @@ export function createRangeTool() {
             }
           }
         });
+        if (shader) {
+          OBR.scene.local.updateItems([shader], (items) => {
+            const item = items[0];
+            if (!item) {
+              return;
+            }
+            item.position = event.pointerPosition;
+          });
+        }
       }
     },
     onToolDragEnd() {
-      if (tokenInteraction) {
-        const final = tokenInteraction[0](() => {});
-        OBR.scene.items.updateItems([final.id], (items) => {
-          const item = items[0];
-          if (!item) {
-            return;
-          }
-          item.position = final.position;
-          if (!item.disableAutoZIndex) {
-            item.zIndex = Date.now();
-          }
-        });
-      }
-      cancelInteractions();
+      finalizeMove();
+      cleanup();
     },
     onToolDragCancel() {
-      cancelInteractions();
+      cleanup();
     },
     onDeactivate() {
-      cancelInteractions();
+      cleanup();
+    },
+    onToolUp() {
+      finalizeMove();
+      cleanup();
     },
     shortcut: "R",
     cursors: [
