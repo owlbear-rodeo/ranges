@@ -84,6 +84,7 @@ function getRing(center: Vector2, radius: number, name: string, color: string) {
     .metadata({
       [metadataKey]: {},
     })
+    .disableHit(true)
     .layer("POPOVER")
     .build();
 }
@@ -111,6 +112,7 @@ function getLabel(
       },
     })
     .minViewScale(1)
+    .disableHit(true)
     .layer("POPOVER")
     .build();
 }
