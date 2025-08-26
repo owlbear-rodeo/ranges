@@ -36,8 +36,8 @@ const ranges: Range[] = [
     radius: 1,
     name: "Melee",
     uniformName: "melee",
-    uniformColor: [0.38, 0.21, 1],
-    color: "#6236FF",
+    uniformColor: [0.54, 0.21, 1],
+    color: "#8836FF",
   },
   {
     radius: 2,
