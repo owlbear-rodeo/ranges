@@ -18,7 +18,7 @@ export const range: Range = {
       name: "Melee",
     },
     {
-      radius: 2,
+      radius: 3,
       name: "Very Close",
     },
     {
@@ -26,7 +26,7 @@ export const range: Range = {
       name: "Close",
     },
     {
-      radius: 20,
+      radius: 12,
       name: "Far",
     },
     {
