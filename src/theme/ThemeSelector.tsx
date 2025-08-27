@@ -63,7 +63,15 @@ export function ThemeSelector() {
         }}
       >
         {themes.map((theme) => (
-          <Box key={theme.name} sx={{ position: "relative" }}>
+          <Box
+            key={theme.name}
+            sx={{
+              position: "relative",
+              "&:hover .theme-background": {
+                opacity: theme.name === selectedTheme ? 0.7 : 0.4,
+              },
+            }}
+          >
             <FormControlLabel
               value={theme.name}
               control={
@@ -89,12 +97,14 @@ export function ThemeSelector() {
               }}
             />
             <Box
+              className="theme-background"
               sx={{
                 position: "absolute",
                 inset: 0,
                 zIndex: -1,
                 overflow: "hidden",
                 opacity: theme.name === selectedTheme ? 0.6 : 0.3,
+                transition: "opacity 0.2s ease-in-out",
                 borderRadius: "12px",
               }}
               aria-hidden="true"
