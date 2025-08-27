@@ -1,13 +1,14 @@
 uniform mat3 model;
-uniform mat3 circle1;
-uniform mat3 circle2;
-uniform mat3 circle3;
-uniform mat3 circle4;
-uniform mat3 circle5;
+uniform mat3 data1;
+uniform mat3 data2;
+uniform mat3 data3;
+uniform mat3 data4;
+uniform mat3 data5;
 uniform float minFalloff;
 uniform float maxFalloff;
 
 void addRing(inout vec3 color, inout float alpha, vec3 ringColor, float radius, float prevRadius, float dist) {
+  if (radius <= 0.0) return;
   float outer = step(dist, radius);
   float inner = step(dist, prevRadius);
   float mask = outer - inner;
@@ -23,11 +24,21 @@ half4 main(float2 coord) {
 
   vec3 color = vec3(0.0);
   float alpha = 0.0;
-  addRing(color, alpha, circle1[0].rgb, circle1[1].x, 0.0, dist);
-  addRing(color, alpha, circle2[0].rgb, circle2[1].x, circle1[1].x, dist);
-  addRing(color, alpha, circle3[0].rgb, circle3[1].x, circle2[1].x, dist);
-  addRing(color, alpha, circle4[0].rgb, circle4[1].x, circle3[1].x, dist);
-  addRing(color, alpha, circle5[0].rgb, circle5[1].x, circle4[1].x, dist);
+  
+  addRing(color, alpha, data1[1].rgb, data1[0].x, 0.0, dist);
+  addRing(color, alpha, data1[2].rgb, data1[0].y, data1[0].x, dist);
+
+  addRing(color, alpha, data2[1].rgb, data2[0].x, data1[0].y, dist);
+  addRing(color, alpha, data2[2].rgb, data2[0].y, data2[0].x, dist);
+  
+  addRing(color, alpha, data3[1].rgb, data3[0].x, data2[0].y, dist);
+  addRing(color, alpha, data3[2].rgb, data3[0].y, data3[0].x, dist);
+  
+  addRing(color, alpha, data4[1].rgb, data4[0].x, data3[0].y, dist);
+  addRing(color, alpha, data4[2].rgb, data4[0].y, data4[0].x, dist);
+  
+  addRing(color, alpha, data5[1].rgb, data5[0].x, data4[0].y, dist);
+  addRing(color, alpha, data5[2].rgb, data5[0].y, data5[0].x, dist);
   
   return half4(vec3(color) * alpha, alpha);
 }

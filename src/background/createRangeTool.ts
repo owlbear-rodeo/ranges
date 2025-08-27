@@ -8,6 +8,7 @@ import OBR, {
   type Item,
   type Vector2,
   type Uniform,
+  type Matrix,
 } from "@owlbear-rodeo/sdk";
 import rangeIcon from "../assets/range.svg";
 import { canUpdateItem } from "./permission";
@@ -83,25 +84,37 @@ function getRadiusForRange(range: Range, dpi: number) {
 async function getShaders(center: Vector2, theme: Theme): Promise<Item[]> {
   const dpi = await OBR.scene.grid.getDpi();
   const uniforms: Uniform[] = [];
-  for (let i = 0; i < ranges.length; i++) {
-    if (i >= theme.colors.length) {
-      console.warn(`Theme ${theme.name} has less colors than ranges`);
-      break;
-    }
-    const color = theme.colors[i];
+
+  /*
+   * Data uniform layout (each mat3 contains 2 circles):
+   * [r1, r2, 0]  [R1, G1, B1]  [R2, G2, B2]
+   * Where: r = radius, R/G/B = color components (0.0-1.0)
+   * The shader is hard coded with 5 mat3 uniforms, so it supports up to 10 ranges
+   */
+  for (let dataIndex = 0; dataIndex < 5; dataIndex++) {
+    const circle1Index = dataIndex * 2;
+    const circle2Index = dataIndex * 2 + 1;
+    const color1 = theme.colors[circle1Index] ?? { r: 0, g: 0, b: 0 };
+    const color2 = theme.colors[circle2Index] ?? { r: 0, g: 0, b: 0 };
+    const range1 = ranges[circle1Index];
+    const range2 = ranges[circle2Index];
+    const radius1 = range1 ? getRadiusForRange(range1, dpi) : 0;
+    const radius2 = range2 ? getRadiusForRange(range2, dpi) : 0;
+    const value: Matrix = [
+      radius1,
+      radius2,
+      0,
+      color1.r / 255,
+      color1.g / 255,
+      color1.b / 255,
+      color2.r / 255,
+      color2.g / 255,
+      color2.b / 255,
+    ];
+
     uniforms.push({
-      name: `circle${i + 1}`,
-      value: [
-        color.r / 255,
-        color.g / 255,
-        color.b / 255,
-        getRadiusForRange(ranges[i], dpi),
-        0,
-        0,
-        0,
-        0,
-        0,
-      ],
+      name: `data${dataIndex + 1}`,
+      value: value,
     });
   }
 
