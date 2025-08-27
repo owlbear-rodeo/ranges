@@ -24,6 +24,14 @@ This extension adds a new Range mode to the measure tool.
 Once this tool is selected you can view ranges by holding and draging in the Scene.
 If you move a token while this tool is active the range will stay stationary so you can see how far your token has moved.
 
+## Color Blind Themes
+
+As well as the base theme there are three color themes that target specific color blindess.
+
+These themes can be found using the Range Theme action.
+
+![Range themes](https://raw.githubusercontent.com/owlbear-rodeo/ranges/main/docs/themes.jpg)
+
 **Support**
 
 If you need support for this extension you can email <support@owlbear.rodeo>
