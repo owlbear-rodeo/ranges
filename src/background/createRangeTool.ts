@@ -308,7 +308,7 @@ export function createRangeTool() {
       finalizeMove();
       cleanup();
     },
-    shortcut: "R",
+    shortcut: "O",
     cursors: [
       {
         cursor: "grabbing",
