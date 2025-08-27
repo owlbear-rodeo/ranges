@@ -4,13 +4,15 @@ uniform mat3 circle2;
 uniform mat3 circle3;
 uniform mat3 circle4;
 uniform mat3 circle5;
+uniform float minFalloff;
+uniform float maxFalloff;
 
 void addRing(inout vec3 color, inout float alpha, vec3 ringColor, float radius, float prevRadius, float dist) {
   float outer = step(dist, radius);
   float inner = step(dist, prevRadius);
   float mask = outer - inner;
   float a = (dist - prevRadius) / (radius - prevRadius);
-  float falloff = mix(0.1, 0.6, a);
+  float falloff = mix(minFalloff, maxFalloff, a);
   alpha += falloff * mask;
   color += mix(vec3(1, 1, 1), ringColor, falloff) * mask;
 }

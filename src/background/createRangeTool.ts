@@ -14,22 +14,26 @@ import { canUpdateItem } from "./permission";
 import rangeSksl from "./range.frag";
 import { getPluginId } from "../util/getPluginId";
 import { getMetadata } from "../util/getMetadata";
-import { getStoredTheme, Theme } from "../theme/themes";
+import { Color, getStoredTheme, Theme } from "../theme/themes";
 import { Range, ranges } from "./ranges";
 
 let rangeInteraction: InteractionManager<Item[]> | null = null;
 let tokenInteraction: InteractionManager<Item> | null = null;
-let shader: Item | null = null;
+let shaders: Item[] = [];
 let grabOffset: Vector2 = { x: 0, y: 0 };
 let downTarget: Item | null = null;
 let labelOffset = -16;
 
-function getRing(center: Vector2, radius: number, name: string, color: string) {
+function getColorString(color: Color) {
+  return `rgb(${color.r}, ${color.g}, ${color.b})`;
+}
+
+function getRing(center: Vector2, radius: number, name: string, color: Color) {
   return buildShape()
     .fillOpacity(0)
     .strokeWidth(2)
-    .strokeOpacity(0.8)
-    .strokeColor(color)
+    .strokeOpacity(0.9)
+    .strokeColor(getColorString(color))
     .strokeDash([10, 10])
     .shapeType("CIRCLE")
     .position(center)
@@ -44,20 +48,21 @@ function getRing(center: Vector2, radius: number, name: string, color: string) {
     .build();
 }
 
-function getLabel(
-  center: Vector2,
-  radius: number,
-  name: string,
-  color: string
-) {
+function getLabelTextColor(color: Color, threshold: number) {
+  // Luminance
+  const brightness = (color.r * 299 + color.g * 587 + color.b * 114) / 1000;
+  return brightness < threshold ? "white" : "black";
+}
+
+function getLabel(center: Vector2, radius: number, name: string, color: Color) {
   return buildLabel()
-    .fillColor("white")
+    .fillColor(getLabelTextColor(color, 180))
     .fillOpacity(1.0)
     .plainText(name)
     .position(Math2.subtract(center, { x: 0, y: radius + labelOffset }))
     .pointerDirection("UP")
-    .backgroundOpacity(0.5)
-    .backgroundColor(color)
+    .backgroundOpacity(0.8)
+    .backgroundColor(getColorString(color))
     .padding(8)
     .cornerRadius(20)
     .pointerHeight(0)
@@ -75,7 +80,7 @@ function getRadiusForRange(range: Range, dpi: number) {
   return range.radius * dpi + dpi / 2;
 }
 
-async function getShader(center: Vector2, theme: Theme) {
+async function getShaders(center: Vector2, theme: Theme): Promise<Item[]> {
   const dpi = await OBR.scene.grid.getDpi();
   const uniforms: Uniform[] = [];
   for (let i = 0; i < ranges.length; i++) {
@@ -100,15 +105,41 @@ async function getShader(center: Vector2, theme: Theme) {
     });
   }
 
-  return buildEffect()
+  const darken = buildEffect()
+    .sksl(
+      `
+half4 main(float2 coord) {
+    return half4(0.85, 0.85, 0.85, 1.0);
+}
+      `
+    )
+    .effectType("VIEWPORT")
+    .layer("POINTER")
+    .zIndex(0)
+    .blendMode("MULTIPLY")
+    .build();
+
+  const color = buildEffect()
     .sksl(rangeSksl)
     .effectType("VIEWPORT")
     .position(center)
     .layer("POINTER")
-    .zIndex(0)
+    .zIndex(1)
     .blendMode("COLOR")
-    .uniforms(uniforms)
+    .uniforms([
+      ...uniforms,
+      {
+        name: "minFalloff",
+        value: 0.1,
+      },
+      {
+        name: "maxFalloff",
+        value: 0.6,
+      },
+    ])
     .build();
+
+  return [darken, color];
 }
 
 async function getRangeItems(center: Vector2, theme: Theme): Promise<Item[]> {
@@ -121,10 +152,9 @@ async function getRangeItems(center: Vector2, theme: Theme): Promise<Item[]> {
     }
     const color = theme.colors[i];
     const range = ranges[i];
-    const colorString = `rgb(${color.r}, ${color.g}, ${color.b})`;
     const radius = getRadiusForRange(range, dpi);
-    items.push(getRing(center, radius, range.name, colorString));
-    items.push(getLabel(center, radius, range.name, colorString));
+    items.push(getRing(center, radius, range.name, color));
+    items.push(getLabel(center, radius, range.name, color));
   }
 
   return items;
@@ -141,9 +171,9 @@ function cleanup() {
     cancel();
     tokenInteraction = null;
   }
-  if (shader) {
-    OBR.scene.local.deleteItems([shader.id]);
-    shader = null;
+  if (shaders.length > 0) {
+    OBR.scene.local.deleteItems(shaders.map((shader) => shader.id));
+    shaders = [];
   }
   downTarget = null;
 }
@@ -210,8 +240,8 @@ export function createRangeTool() {
       }
 
       const theme = getStoredTheme();
-      shader = await getShader(initialPosition, theme);
-      await OBR.scene.local.addItems([shader]);
+      shaders = await getShaders(initialPosition, theme);
+      await OBR.scene.local.addItems(shaders);
 
       const rangeItems = await getRangeItems(initialPosition, theme);
       rangeInteraction = await OBR.interaction.startItemInteraction(rangeItems);
@@ -255,13 +285,11 @@ export function createRangeTool() {
             }
           }
         });
-        if (shader) {
-          OBR.scene.local.updateItems([shader], (items) => {
-            const item = items[0];
-            if (!item) {
-              return;
+        if (shaders.length > 0) {
+          OBR.scene.local.updateItems(shaders, (items) => {
+            for (const item of items) {
+              item.position = event.pointerPosition;
             }
-            item.position = event.pointerPosition;
           });
         }
       }
