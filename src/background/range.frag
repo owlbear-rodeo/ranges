@@ -1,9 +1,9 @@
 uniform mat3 model;
-uniform mat3 melee;
-uniform mat3 very_close;
-uniform mat3 close;
-uniform mat3 far;
-uniform mat3 very_far;
+uniform mat3 circle1;
+uniform mat3 circle2;
+uniform mat3 circle3;
+uniform mat3 circle4;
+uniform mat3 circle5;
 
 void addRing(inout vec3 color, inout float alpha, vec3 ringColor, float radius, float prevRadius, float dist) {
   float outer = step(dist, radius);
@@ -21,11 +21,11 @@ half4 main(float2 coord) {
 
   vec3 color = vec3(0.0);
   float alpha = 0.0;
-  addRing(color, alpha, melee[0].rgb, melee[1].x, 0.0, dist);
-  addRing(color, alpha, very_close[0].rgb, very_close[1].x, melee[1].x, dist);
-  addRing(color, alpha, close[0].rgb, close[1].x, very_close[1].x, dist);
-  addRing(color, alpha, far[0].rgb, far[1].x, close[1].x, dist);
-  addRing(color, alpha, very_far[0].rgb, very_far[1].x, far[1].x, dist);
+  addRing(color, alpha, circle1[0].rgb, circle1[1].x, 0.0, dist);
+  addRing(color, alpha, circle2[0].rgb, circle2[1].x, circle1[1].x, dist);
+  addRing(color, alpha, circle3[0].rgb, circle3[1].x, circle2[1].x, dist);
+  addRing(color, alpha, circle4[0].rgb, circle4[1].x, circle3[1].x, dist);
+  addRing(color, alpha, circle5[0].rgb, circle5[1].x, circle4[1].x, dist);
   
   return half4(vec3(color) * alpha, alpha);
 }

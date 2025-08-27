@@ -7,15 +7,15 @@ import OBR, {
   type InteractionManager,
   type Item,
   type Vector2,
+  type Uniform,
 } from "@owlbear-rodeo/sdk";
-import rangeIcon from "./range.svg";
+import rangeIcon from "../assets/range.svg";
 import { canUpdateItem } from "./permission";
 import rangeSksl from "./range.frag";
+import { getPluginId } from "../util/getPluginId";
+import { getMetadata } from "../util/getMetadata";
+import { getStoredTheme, Theme } from "../theme/themes";
 
-const metadataKey = "rodeo.owlbear.ranges/metadata";
-type RangeMetadata = {
-  radius: number;
-};
 let rangeInteraction: InteractionManager<Item[]> | null = null;
 let tokenInteraction: InteractionManager<Item> | null = null;
 let shader: Item | null = null;
@@ -26,46 +26,28 @@ let labelOffset = -16;
 type Range = {
   radius: number;
   name: string;
-  uniformColor: [number, number, number];
-  uniformName: string;
-  color: string;
 };
 
 const ranges: Range[] = [
   {
     radius: 1,
     name: "Melee",
-    uniformName: "melee",
-    uniformColor: [0.54, 0.21, 1],
-    color: "#8836FF",
   },
   {
     radius: 2,
     name: "Very Close",
-    uniformName: "very_close",
-    uniformColor: [0, 0.56, 1],
-    color: "#0091FF",
   },
   {
     radius: 6,
     name: "Close",
-    uniformName: "close",
-    uniformColor: [0.42, 0.83, 0],
-    color: "#6DD400",
   },
   {
     radius: 20,
     name: "Far",
-    uniformName: "far",
-    uniformColor: [0.96, 0.7, 0],
-    color: "#F7B500",
   },
   {
     radius: 60,
     name: "Very Far",
-    uniformName: "very_far",
-    uniformColor: [0.98, 0.39, 0.2],
-    color: "#FA6400",
   },
 ];
 
@@ -82,7 +64,7 @@ function getRing(center: Vector2, radius: number, name: string, color: string) {
     .height(radius * 2)
     .name(name)
     .metadata({
-      [metadataKey]: {},
+      [getPluginId("radius")]: radius,
     })
     .disableHit(true)
     .layer("POPOVER")
@@ -107,9 +89,7 @@ function getLabel(
     .cornerRadius(20)
     .pointerHeight(0)
     .metadata({
-      [metadataKey]: {
-        radius: radius,
-      },
+      [getPluginId("radius")]: radius,
     })
     .minViewScale(1)
     .disableHit(true)
@@ -122,8 +102,31 @@ function getRadiusForRange(range: Range, dpi: number) {
   return range.radius * dpi + dpi / 2;
 }
 
-async function getShader(center: Vector2) {
+async function getShader(center: Vector2, theme: Theme) {
   const dpi = await OBR.scene.grid.getDpi();
+  const uniforms: Uniform[] = [];
+  for (let i = 0; i < ranges.length; i++) {
+    if (i >= theme.colors.length) {
+      console.warn(`Theme ${theme.name} has less colors than ranges`);
+      break;
+    }
+    const color = theme.colors[i];
+    uniforms.push({
+      name: `circle${i + 1}`,
+      value: [
+        color.r / 255,
+        color.g / 255,
+        color.b / 255,
+        getRadiusForRange(ranges[i], dpi),
+        0,
+        0,
+        0,
+        0,
+        0,
+      ],
+    });
+  }
+
   return buildEffect()
     .sksl(rangeSksl)
     .effectType("VIEWPORT")
@@ -131,30 +134,24 @@ async function getShader(center: Vector2) {
     .layer("POINTER")
     .zIndex(0)
     .blendMode("COLOR")
-    .uniforms(
-      ranges.map((range) => ({
-        name: range.uniformName,
-        value: [
-          ...range.uniformColor,
-          getRadiusForRange(range, dpi),
-          0,
-          0,
-          0,
-          0,
-          0,
-        ],
-      }))
-    )
+    .uniforms(uniforms)
     .build();
 }
 
-async function getRangeItems(center: Vector2): Promise<Item[]> {
+async function getRangeItems(center: Vector2, theme: Theme): Promise<Item[]> {
   const dpi = await OBR.scene.grid.getDpi();
   const items = [];
-  for (const range of ranges) {
+  for (let i = 0; i < ranges.length; i++) {
+    if (i >= theme.colors.length) {
+      console.warn(`Theme ${theme.name} has less colors than ranges`);
+      break;
+    }
+    const color = theme.colors[i];
+    const range = ranges[i];
+    const colorString = `rgb(${color.r}, ${color.g}, ${color.b})`;
     const radius = getRadiusForRange(range, dpi);
-    items.push(getRing(center, radius, range.name, range.color));
-    items.push(getLabel(center, radius, range.name, range.color));
+    items.push(getRing(center, radius, range.name, colorString));
+    items.push(getLabel(center, radius, range.name, colorString));
   }
 
   return items;
@@ -199,15 +196,9 @@ async function finalizeMove() {
   }
 }
 
-function hasMetadata(
-  item: Item
-): item is Item & { metadata: { [metadataKey]: RangeMetadata } } {
-  return metadataKey in item.metadata;
-}
-
 export function createRangeTool() {
   OBR.tool.createMode({
-    id: "rodeo.owlbear.ranges/tool",
+    id: getPluginId("mode/range"),
     icons: [
       {
         icon: rangeIcon,
@@ -245,10 +236,11 @@ export function createRangeTool() {
         downTarget = event.target;
       }
 
-      shader = await getShader(initialPosition);
+      const theme = getStoredTheme();
+      shader = await getShader(initialPosition, theme);
       await OBR.scene.local.addItems([shader]);
 
-      const rangeItems = await getRangeItems(initialPosition);
+      const rangeItems = await getRangeItems(initialPosition, theme);
       rangeInteraction = await OBR.interaction.startItemInteraction(rangeItems);
     },
     async onToolDragStart() {
@@ -274,16 +266,16 @@ export function createRangeTool() {
         const update = rangeInteraction[0];
         update?.((items) => {
           for (const item of items) {
-            if (!hasMetadata(item)) {
-              continue;
-            }
-            const metadata = item.metadata[metadataKey];
             if (isLabel(item)) {
+              const radius = getMetadata(
+                item.metadata,
+                getPluginId("radius"),
+                0
+              );
               // Offset the label to the top of the ring
-              const range = metadata.radius;
               item.position = Math2.subtract(event.pointerPosition, {
                 x: 0,
-                y: range + labelOffset,
+                y: radius + labelOffset,
               });
             } else {
               item.position = event.pointerPosition;
