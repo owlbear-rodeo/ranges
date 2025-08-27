@@ -6,6 +6,15 @@ uniform mat3 data4;
 uniform mat3 data5;
 uniform float minFalloff;
 uniform float maxFalloff;
+uniform int type;
+
+float circle(vec2 p) {
+  return length(p);
+}
+
+float square(vec2 p) {
+  return max(abs(p.x), abs(p.y));
+}
 
 void addRing(inout vec3 color, inout float alpha, vec3 ringColor, float radius, float prevRadius, float dist) {
   if (radius <= 0.0) return;
@@ -20,7 +29,7 @@ void addRing(inout vec3 color, inout float alpha, vec3 ringColor, float radius, 
 
 half4 main(float2 coord) {
   vec2 worldCoord = (model * vec3(coord, 1.0)).xy;
-  float dist = length(worldCoord);
+  float dist = type == 0 ? circle(worldCoord) : square(worldCoord);
 
   vec3 color = vec3(0.0);
   float alpha = 0.0;

@@ -2,7 +2,6 @@ import OBR, {
   buildEffect,
   buildLabel,
   buildShape,
-  isLabel,
   Math2,
   type InteractionManager,
   type Item,
@@ -12,11 +11,11 @@ import OBR, {
 } from "@owlbear-rodeo/sdk";
 import rangeIcon from "../assets/range.svg";
 import { canUpdateItem } from "./permission";
-import rangeSksl from "./range.frag";
+import ringSksl from "./ring.frag";
 import { getPluginId } from "../util/getPluginId";
 import { getMetadata } from "../util/getMetadata";
 import { Color, getStoredTheme, Theme } from "../theme/themes";
-import { Range, ranges } from "./ranges";
+import { RangeType, Ring, Range, range } from "./ranges";
 
 let rangeInteraction: InteractionManager<Item[]> | null = null;
 let tokenInteraction: InteractionManager<Item> | null = null;
@@ -29,24 +28,9 @@ function getColorString(color: Color) {
   return `rgb(${color.r}, ${color.g}, ${color.b})`;
 }
 
-function getRing(center: Vector2, radius: number, name: string, color: Color) {
-  return buildShape()
-    .fillOpacity(0)
-    .strokeWidth(2)
-    .strokeOpacity(0.9)
-    .strokeColor(getColorString(color))
-    .strokeDash([10, 10])
-    .shapeType("CIRCLE")
-    .position(center)
-    .width(radius * 2)
-    .height(radius * 2)
-    .name(name)
-    .metadata({
-      [getPluginId("radius")]: radius,
-    })
-    .disableHit(true)
-    .layer("POPOVER")
-    .build();
+function getRadiusForRing(ring: Ring, dpi: number) {
+  // Offset the ring by half a grid unit to account for the center of the grid
+  return ring.radius * dpi + dpi / 2;
 }
 
 function getLabelTextColor(color: Color, threshold: number) {
@@ -55,12 +39,45 @@ function getLabelTextColor(color: Color, threshold: number) {
   return brightness < threshold ? "white" : "black";
 }
 
-function getLabel(center: Vector2, radius: number, name: string, color: Color) {
+function getRing(
+  center: Vector2,
+  ring: Ring,
+  color: Color,
+  type: RangeType,
+  dpi: number
+) {
+  const radius = getRadiusForRing(ring, dpi);
+  let offset = { x: 0, y: 0 };
+  if (type === "square") {
+    offset = { x: radius, y: radius };
+  }
+  return buildShape()
+    .fillOpacity(0)
+    .strokeWidth(2)
+    .strokeOpacity(0.9)
+    .strokeColor(getColorString(color))
+    .strokeDash([10, 10])
+    .shapeType(type === "square" ? "RECTANGLE" : "CIRCLE")
+    .position(Math2.subtract(center, offset))
+    .width(radius * 2)
+    .height(radius * 2)
+    .name(ring.name)
+    .metadata({
+      [getPluginId("offset")]: offset,
+    })
+    .disableHit(true)
+    .layer("POPOVER")
+    .build();
+}
+
+function getLabel(center: Vector2, ring: Ring, color: Color, dpi: number) {
+  const radius = getRadiusForRing(ring, dpi);
+  const offset = { x: 0, y: radius + labelOffset };
   return buildLabel()
     .fillColor(getLabelTextColor(color, 180))
     .fillOpacity(1.0)
-    .plainText(name)
-    .position(Math2.subtract(center, { x: 0, y: radius + labelOffset }))
+    .plainText(ring.name)
+    .position(Math2.subtract(center, offset))
     .pointerDirection("UP")
     .backgroundOpacity(0.8)
     .backgroundColor(getColorString(color))
@@ -68,7 +85,7 @@ function getLabel(center: Vector2, radius: number, name: string, color: Color) {
     .cornerRadius(20)
     .pointerHeight(0)
     .metadata({
-      [getPluginId("radius")]: radius,
+      [getPluginId("offset")]: offset,
     })
     .minViewScale(1)
     .disableHit(true)
@@ -76,12 +93,11 @@ function getLabel(center: Vector2, radius: number, name: string, color: Color) {
     .build();
 }
 
-function getRadiusForRange(range: Range, dpi: number) {
-  // Offset the ring by half a grid unit to account for the center of the grid
-  return range.radius * dpi + dpi / 2;
-}
-
-async function getShaders(center: Vector2, theme: Theme): Promise<Item[]> {
+async function getShaders(
+  center: Vector2,
+  theme: Theme,
+  range: Range
+): Promise<Item[]> {
   const dpi = await OBR.scene.grid.getDpi();
   const uniforms: Uniform[] = [];
 
@@ -89,17 +105,22 @@ async function getShaders(center: Vector2, theme: Theme): Promise<Item[]> {
    * Data uniform layout (each mat3 contains 2 circles):
    * [r1, r2, 0]  [R1, G1, B1]  [R2, G2, B2]
    * Where: r = radius, R/G/B = color components (0.0-1.0)
-   * The shader is hard coded with 5 mat3 uniforms, so it supports up to 10 ranges
+   * The shader is hard coded with 5 mat3 uniforms, so it supports up to 10 rings
    */
+  if (range.rings.length > 10) {
+    console.warn(
+      `Range ${range.type} has more than 10 rings, rings shaders need updating to support more rings`
+    );
+  }
   for (let dataIndex = 0; dataIndex < 5; dataIndex++) {
-    const circle1Index = dataIndex * 2;
-    const circle2Index = dataIndex * 2 + 1;
-    const color1 = theme.colors[circle1Index] ?? { r: 0, g: 0, b: 0 };
-    const color2 = theme.colors[circle2Index] ?? { r: 0, g: 0, b: 0 };
-    const range1 = ranges[circle1Index];
-    const range2 = ranges[circle2Index];
-    const radius1 = range1 ? getRadiusForRange(range1, dpi) : 0;
-    const radius2 = range2 ? getRadiusForRange(range2, dpi) : 0;
+    const ring1Index = dataIndex * 2;
+    const ring2Index = dataIndex * 2 + 1;
+    const color1 = theme.colors[ring1Index % theme.colors.length];
+    const color2 = theme.colors[ring2Index % theme.colors.length];
+    const ring1 = range.rings[ring1Index];
+    const ring2 = range.rings[ring2Index];
+    const radius1 = ring1 ? getRadiusForRing(ring1, dpi) : 0;
+    const radius2 = ring2 ? getRadiusForRing(ring2, dpi) : 0;
     const value: Matrix = [
       radius1,
       radius2,
@@ -133,7 +154,7 @@ half4 main(float2 coord) {
     .build();
 
   const color = buildEffect()
-    .sksl(rangeSksl)
+    .sksl(ringSksl)
     .effectType("VIEWPORT")
     .position(center)
     .layer("POINTER")
@@ -149,25 +170,28 @@ half4 main(float2 coord) {
         name: "maxFalloff",
         value: 0.6,
       },
+      {
+        name: "type",
+        value: range.type === "square" ? 1 : 0,
+      },
     ])
     .build();
 
   return [darken, color];
 }
 
-async function getRangeItems(center: Vector2, theme: Theme): Promise<Item[]> {
+async function getRings(
+  center: Vector2,
+  theme: Theme,
+  range: Range
+): Promise<Item[]> {
   const dpi = await OBR.scene.grid.getDpi();
   const items = [];
-  for (let i = 0; i < ranges.length; i++) {
-    if (i >= theme.colors.length) {
-      console.warn(`Theme ${theme.name} has less colors than ranges`);
-      break;
-    }
-    const color = theme.colors[i];
-    const range = ranges[i];
-    const radius = getRadiusForRange(range, dpi);
-    items.push(getRing(center, radius, range.name, color));
-    items.push(getLabel(center, radius, range.name, color));
+  for (let i = 0; i < range.rings.length; i++) {
+    const color = theme.colors[i % theme.colors.length];
+    const ring = range.rings[i];
+    items.push(getRing(center, ring, color, range.type, dpi));
+    items.push(getLabel(center, ring, color, dpi));
   }
 
   return items;
@@ -253,10 +277,10 @@ export function createRangeTool() {
       }
 
       const theme = getStoredTheme();
-      shaders = await getShaders(initialPosition, theme);
+      shaders = await getShaders(initialPosition, theme, range);
       await OBR.scene.local.addItems(shaders);
 
-      const rangeItems = await getRangeItems(initialPosition, theme);
+      const rangeItems = await getRings(initialPosition, theme, range);
       rangeInteraction = await OBR.interaction.startItemInteraction(rangeItems);
     },
     async onToolDragStart() {
@@ -282,20 +306,11 @@ export function createRangeTool() {
         const update = rangeInteraction[0];
         update?.((items) => {
           for (const item of items) {
-            if (isLabel(item)) {
-              const radius = getMetadata(
-                item.metadata,
-                getPluginId("radius"),
-                0
-              );
-              // Offset the label to the top of the ring
-              item.position = Math2.subtract(event.pointerPosition, {
-                x: 0,
-                y: radius + labelOffset,
-              });
-            } else {
-              item.position = event.pointerPosition;
-            }
+            const offset = getMetadata(item.metadata, getPluginId("offset"), {
+              x: 0,
+              y: 0,
+            });
+            item.position = Math2.subtract(event.pointerPosition, offset);
           }
         });
         if (shaders.length > 0) {
