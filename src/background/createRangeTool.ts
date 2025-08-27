@@ -15,6 +15,7 @@ import rangeSksl from "./range.frag";
 import { getPluginId } from "../util/getPluginId";
 import { getMetadata } from "../util/getMetadata";
 import { getStoredTheme, Theme } from "../theme/themes";
+import { Range, ranges } from "./ranges";
 
 let rangeInteraction: InteractionManager<Item[]> | null = null;
 let tokenInteraction: InteractionManager<Item> | null = null;
@@ -22,34 +23,6 @@ let shader: Item | null = null;
 let grabOffset: Vector2 = { x: 0, y: 0 };
 let downTarget: Item | null = null;
 let labelOffset = -16;
-
-type Range = {
-  radius: number;
-  name: string;
-};
-
-const ranges: Range[] = [
-  {
-    radius: 1,
-    name: "Melee",
-  },
-  {
-    radius: 2,
-    name: "Very Close",
-  },
-  {
-    radius: 6,
-    name: "Close",
-  },
-  {
-    radius: 20,
-    name: "Far",
-  },
-  {
-    radius: 60,
-    name: "Very Far",
-  },
-];
 
 function getRing(center: Vector2, radius: number, name: string, color: string) {
   return buildShape()
