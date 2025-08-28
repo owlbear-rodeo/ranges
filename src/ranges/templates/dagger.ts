@@ -1,8 +1,8 @@
 import { Range } from "../ranges";
 
-export const daggerDefined: Range = {
-  name: "Dagger Defined",
-  id: "dagger-defined",
+export const dagger: Range = {
+  name: "Dagger",
+  id: "dagger",
   type: "circle",
   hideSize: true,
   rings: [
