@@ -9,13 +9,14 @@ import FormControl from "@mui/material/FormControl";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 
+import DeleteRounded from "@mui/icons-material/DeleteRounded";
+import AddRounded from "@mui/icons-material/AddRounded";
+
 import { SmallLabel } from "./SmallLabel";
 import { RingItem } from "./RingItem";
 import { RangeTypeButtonGroup } from "./RangeTypeButtonGroup";
 import { getStoredTheme } from "../theme/themes";
 import { Range } from "../ranges/ranges";
-import DeleteRounded from "@mui/icons-material/DeleteRounded";
-import AddRounded from "@mui/icons-material/AddRounded";
 
 export function RangeEditor({
   range,
@@ -49,18 +50,25 @@ export function RangeEditor({
     });
   }
 
+  const maxRadius = Math.max(...range.rings.map((r) => r.radius));
+  // Fudge the numbers a bit so the graph looks better.
+  // We add 1 so the min radius is 2 as log(1) is 0 and we want to start at 1
+  const logMaxRadius = Math.log(maxRadius + 1);
+
   return (
     <Stack gap={1} sx={{ overflowY: "auto", pb: 0.5 }}>
       <Box sx={{ flexGrow: 1 }}>
         <List disablePadding>
           {range.rings.map((ring, i, rings) => {
             const color = theme.colors[i % theme.colors.length];
+            const logRadius = Math.log(ring.radius + 1);
+            const logComplete = logRadius / logMaxRadius;
             return (
               <RingItem
                 key={ring.id}
                 ring={ring}
                 color={color}
-                complete={(i + 1) / rings.length}
+                complete={logComplete}
                 gridScale={gridScale}
                 iconRadius={i + 1}
                 ringIndex={i}
