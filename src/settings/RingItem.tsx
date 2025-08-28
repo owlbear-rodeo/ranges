@@ -107,6 +107,7 @@ export function RingItem({
         pl: 1,
         pr: 0.5,
         gap: onChange ? 1 : 0.5,
+        py: onChange ? 0 : "1px",
       }}
       disablePadding
     >

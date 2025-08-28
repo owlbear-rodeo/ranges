@@ -40,13 +40,13 @@ export function RangeEditor({
       ...range,
       rings: [
         ...range.rings,
-        { name: `Range ${range.rings.length + 1}`, radius: maxRadius + 1 },
+        { name: `Ring ${range.rings.length + 1}`, radius: maxRadius + 1 },
       ],
     });
   }
 
   return (
-    <Stack gap={1} sx={{ overflowY: "auto" }}>
+    <Stack gap={1} sx={{ overflowY: "auto", pb: 0.5 }}>
       <Box sx={{ flexGrow: 1 }}>
         <List disablePadding>
           {range.rings.map((ring, i, rings) => {
@@ -90,7 +90,7 @@ export function RangeEditor({
           onClick={addRing}
           startIcon={<AddRounded />}
         >
-          Add Range
+          Add Ring
         </Button>
       )}
       {onChange && <Controls range={range} onChange={onChange} />}

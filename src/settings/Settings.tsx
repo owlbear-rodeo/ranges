@@ -67,7 +67,7 @@ export function Settings() {
   }
 
   return (
-    <Stack sx={{ height: "256px", p: 1 }}>
+    <Stack sx={{ height: "256px", p: 1, pb: 0 }}>
       <RangeSelector
         selectedRange={selectedRange}
         onSelect={(range) => {
