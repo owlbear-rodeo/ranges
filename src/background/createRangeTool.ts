@@ -15,7 +15,8 @@ import ringSksl from "./ring.frag";
 import { getPluginId } from "../util/getPluginId";
 import { getMetadata } from "../util/getMetadata";
 import { Color, getStoredTheme, Theme } from "../theme/themes";
-import { RangeType, Ring, Range, range } from "./ranges";
+import { fallback as defaultRange } from "../ranges/templates/fallback";
+import { RangeType, Ring, Range } from "../ranges/ranges";
 
 let rangeInteraction: InteractionManager<Item[]> | null = null;
 let tokenInteraction: InteractionManager<Item> | null = null;
@@ -277,10 +278,10 @@ export function createRangeTool() {
       }
 
       const theme = getStoredTheme();
-      shaders = await getShaders(initialPosition, theme, range);
+      shaders = await getShaders(initialPosition, theme, defaultRange);
       await OBR.scene.local.addItems(shaders);
 
-      const rangeItems = await getRings(initialPosition, theme, range);
+      const rangeItems = await getRings(initialPosition, theme, defaultRange);
       rangeInteraction = await OBR.interaction.startItemInteraction(rangeItems);
     },
     async onToolDragStart() {

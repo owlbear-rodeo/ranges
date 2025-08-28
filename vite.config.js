@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         background: resolve(__dirname, "background.html"),
         theme: resolve(__dirname, "theme.html"),
+        settings: resolve(__dirname, "settings.html"),
       },
     },
   },

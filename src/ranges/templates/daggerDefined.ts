@@ -1,17 +1,10 @@
-export type Ring = {
-  radius: number;
-  name: string;
-};
+import { Range } from "../ranges";
 
-export type RangeType = "circle" | "square";
-
-export type Range = {
-  type: RangeType;
-  rings: Ring[];
-};
-
-export const range: Range = {
+export const daggerDefined: Range = {
+  name: "Dagger Defined",
+  id: "dagger-defined",
   type: "circle",
+  hideSize: true,
   rings: [
     {
       radius: 1,
