@@ -59,20 +59,26 @@ export function RangeSelector({
         }
         size="small"
         fullWidth
+        MenuProps={{
+          elevation: 20,
+        }}
       >
         {defaultRanges.map((range) => (
-          <MenuItem key={range.id} value={range.id}>
+          <MenuItem key={range.id} value={range.id} sx={{ minHeight: "auto" }}>
             {range.name}
           </MenuItem>
         ))}
         {customRanges.length > 0 && <Divider />}
         {customRanges.map((range) => (
-          <MenuItem key={range.id} value={range.id}>
+          <MenuItem key={range.id} value={range.id} sx={{ minHeight: "auto" }}>
             {range.name}
           </MenuItem>
         ))}
         <Divider />
-        <MenuItem onClick={onAddRange} sx={{ justifyContent: "space-between" }}>
+        <MenuItem
+          onClick={onAddRange}
+          sx={{ justifyContent: "space-between", minHeight: "auto" }}
+        >
           New Range
           <AddRounded />
         </MenuItem>
