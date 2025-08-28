@@ -40,7 +40,11 @@ export function RangeEditor({
       ...range,
       rings: [
         ...range.rings,
-        { name: `Ring ${range.rings.length + 1}`, radius: maxRadius + 1 },
+        {
+          name: `Ring ${range.rings.length + 1}`,
+          radius: maxRadius + 1,
+          id: crypto.randomUUID(),
+        },
       ],
     });
   }
@@ -53,7 +57,7 @@ export function RangeEditor({
             const color = theme.colors[i % theme.colors.length];
             return (
               <RingItem
-                key={ring.name + i}
+                key={ring.id}
                 ring={ring}
                 color={color}
                 complete={(i + 1) / rings.length}

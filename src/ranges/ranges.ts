@@ -5,6 +5,7 @@ import { steel } from "./templates/steel";
 export type Ring = {
   radius: number;
   name: string;
+  id: string;
 };
 
 export type RangeType = "circle" | "square";

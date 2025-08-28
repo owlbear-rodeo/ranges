@@ -35,6 +35,10 @@ export function RangeSelector({
       ...selectedRange,
       id: crypto.randomUUID(),
       name: `Range ${customRanges.length + 1}`,
+      rings: selectedRange.rings.map((ring) => ({
+        ...ring,
+        id: crypto.randomUUID(),
+      })),
     };
     onAdd(newRange);
   }

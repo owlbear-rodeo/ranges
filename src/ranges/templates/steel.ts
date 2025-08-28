@@ -8,22 +8,27 @@ export const steel: Range = {
     {
       radius: 1,
       name: "Melee",
+      id: "steel-melee",
     },
     {
       radius: 3,
       name: "Shift",
+      id: "steel-shift",
     },
     {
       radius: 5,
       name: "Ranged",
+      id: "steel-ranged",
     },
     {
       radius: 10,
       name: "Ranged",
+      id: "steel-ranged-2",
     },
     {
       radius: 12,
       name: "Ranged",
+      id: "steel-ranged-3",
     },
   ],
 };
