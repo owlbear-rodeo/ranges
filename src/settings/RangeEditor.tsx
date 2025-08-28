@@ -63,6 +63,7 @@ export function RangeEditor({
                 complete={(i + 1) / rings.length}
                 gridScale={gridScale}
                 iconRadius={i + 1}
+                ringIndex={i}
                 onChange={
                   onChange
                     ? (ring) => {

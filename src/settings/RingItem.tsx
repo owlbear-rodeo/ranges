@@ -21,6 +21,7 @@ export function RingItem({
   iconRadius,
   onChange,
   onDelete,
+  ringIndex,
 }: {
   color: Color;
   ring: Ring;
@@ -29,6 +30,7 @@ export function RingItem({
   iconRadius: number;
   onChange?: (ring: Ring) => void;
   onDelete?: () => void;
+  ringIndex: number;
 }) {
   const primary = onChange ? (
     <TextField
@@ -149,8 +151,20 @@ export function RingItem({
           borderBottomLeftRadius: "8px",
           borderTopRightRadius: "20px",
           borderBottomRightRadius: "20px",
-          width: `${complete * 100}%`,
+          width: "0%",
+          animation: (theme) =>
+            `slideInRight-${ringIndex} ${
+              theme.transitions.duration.shorter
+            }ms ease-out ${ringIndex * 100}ms both`,
           opacity: 0.2,
+          [`@keyframes slideInRight-${ringIndex}`]: {
+            "0%": {
+              width: "0%",
+            },
+            "100%": {
+              width: `${complete * 100}%`,
+            },
+          },
         }}
       />
     </ListItem>
