@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { defaultRanges, Range } from "../ranges/ranges";
+import { defaultRanges, getCustomRanges, Range } from "../ranges/ranges";
 import { RangeEditor } from "./RangeEditor";
 import Stack from "@mui/material/Stack";
 import { RangeSelector } from "./RangeSelector";
@@ -7,8 +7,28 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import OBR, { type GridScale } from "@owlbear-rodeo/sdk";
 
+function useCustomRanges() {
+  const [customRanges, setCustomRanges] = useState<Range[]>(() =>
+    getCustomRanges()
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ranges", JSON.stringify(customRanges));
+    } catch (error) {
+      console.warn("Failed to save custom ranges to localStorage:", error);
+    }
+  }, [customRanges]);
+
+  return [customRanges, setCustomRanges] as const;
+}
+
 export function Settings() {
-  const [range, setRange] = useState<Range>(() => defaultRanges[0]);
+  const [selectedRange, setSelectedRange] = useState<Range>(
+    () => defaultRanges[0]
+  );
+  const [editing, setEditing] = useState(false);
+  const [customRanges, setCustomRanges] = useCustomRanges();
   const [storageIsAvailable] = useState(() => {
     try {
       localStorage.setItem("test", "test");
@@ -48,10 +68,37 @@ export function Settings() {
 
   return (
     <Stack sx={{ height: "256px", p: 1 }}>
-      <Stack>
-        <RangeSelector selectedRange={range} setSelectedRange={setRange} />
-        <RangeEditor range={range} onChange={setRange} gridScale={gridScale} />
-      </Stack>
+      <RangeSelector
+        selectedRange={selectedRange}
+        onSelect={(range) => {
+          setSelectedRange(range);
+          setEditing(false);
+        }}
+        customRanges={customRanges}
+        defaultRanges={defaultRanges}
+        onAdd={(range) => {
+          setCustomRanges([...customRanges, range]);
+          setSelectedRange(range);
+          setEditing(true);
+        }}
+        onEdit={() => {
+          setEditing((prev) => !prev);
+        }}
+        isEditing={editing}
+        isCustom={customRanges.some((r) => r.id === selectedRange.id)}
+      />
+      <RangeEditor
+        range={selectedRange}
+        onChange={editing ? setSelectedRange : undefined}
+        gridScale={gridScale}
+        isCustom={customRanges.some((r) => r.id === selectedRange.id)}
+        isEditing={editing}
+        onDelete={() => {
+          setCustomRanges(
+            customRanges.filter((range) => range.id !== range.id)
+          );
+        }}
+      />
     </Stack>
   );
 }

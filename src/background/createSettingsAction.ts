@@ -19,7 +19,7 @@ export function createSettingsAction() {
       OBR.popover.open({
         id: getPluginId("popover/settings"),
         url: "/settings.html",
-        width: 200,
+        width: 350,
         height: 256,
         anchorElementId: elementId,
         anchorOrigin: {

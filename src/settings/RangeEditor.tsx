@@ -1,106 +1,146 @@
-import Stack from "@mui/material/Stack";
-import { Range, Ring } from "../ranges/ranges";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import List from "@mui/material/List";
-import Box from "@mui/material/Box";
-import { Color, getStoredTheme } from "../theme/themes";
 import { useState } from "react";
 import { type GridScale } from "@owlbear-rodeo/sdk";
-import ListItemIcon from "@mui/material/ListItemIcon";
+
+import Stack from "@mui/material/Stack";
+import List from "@mui/material/List";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import FormControl from "@mui/material/FormControl";
+import Switch from "@mui/material/Switch";
+import TextField from "@mui/material/TextField";
+
+import { SmallLabel } from "./SmallLabel";
+import { RingItem } from "./RingItem";
+import { RangeTypeButtonGroup } from "./RangeTypeButtonGroup";
+import { getStoredTheme } from "../theme/themes";
+import { Range } from "../ranges/ranges";
+import DeleteRounded from "@mui/icons-material/DeleteRounded";
+import AddRounded from "@mui/icons-material/AddRounded";
 
 export function RangeEditor({
   range,
   onChange,
-  readonly,
+  onDelete,
   gridScale,
+  isCustom,
+  isEditing,
 }: {
   range: Range;
   gridScale: GridScale;
   onChange?: (range: Range) => void;
-  readonly?: boolean;
+  onDelete?: () => void;
+  isCustom?: boolean;
+  isEditing?: boolean;
 }) {
   const [theme] = useState(() => getStoredTheme());
+
+  function addRing() {
+    const maxRadius = Math.max(...range.rings.map((r) => r.radius));
+    onChange?.({
+      ...range,
+      rings: [
+        ...range.rings,
+        { name: `Range ${range.rings.length + 1}`, radius: maxRadius + 1 },
+      ],
+    });
+  }
+
   return (
-    <Stack>
-      <List>
-        {range.rings.map((ring, i, rings) => {
-          const color = theme.colors[i % theme.colors.length];
-          return (
-            <RingItem
-              key={ring.name + i}
-              ring={ring}
-              color={color}
-              complete={(i + 1) / rings.length}
-              gridScale={gridScale}
-              iconRadius={i + 1}
-            />
-          );
-        })}
-      </List>
+    <Stack gap={1} sx={{ overflowY: "auto" }}>
+      <Box sx={{ flexGrow: 1 }}>
+        <List disablePadding>
+          {range.rings.map((ring, i, rings) => {
+            const color = theme.colors[i % theme.colors.length];
+            return (
+              <RingItem
+                key={ring.name + i}
+                ring={ring}
+                color={color}
+                complete={(i + 1) / rings.length}
+                gridScale={gridScale}
+                iconRadius={i + 1}
+                onChange={
+                  onChange
+                    ? (ring) => {
+                        const newRings = [...rings];
+                        newRings[i] = ring;
+                        onChange?.({ ...range, rings: newRings });
+                      }
+                    : undefined
+                }
+                onDelete={
+                  onChange
+                    ? () => {
+                        const newRings = [...rings];
+                        newRings.splice(i, 1);
+                        onChange?.({ ...range, rings: newRings });
+                      }
+                    : undefined
+                }
+              />
+            );
+          })}
+        </List>
+      </Box>
+      {onChange && (
+        <Button
+          variant="outlined"
+          fullWidth
+          size="small"
+          onClick={addRing}
+          startIcon={<AddRounded />}
+        >
+          Add Range
+        </Button>
+      )}
+      {onChange && <Controls range={range} onChange={onChange} />}
+      {isCustom && isEditing && (
+        <Button
+          fullWidth
+          size="small"
+          onClick={onDelete}
+          startIcon={<DeleteRounded />}
+          color="error"
+        >
+          Delete
+        </Button>
+      )}
     </Stack>
   );
 }
 
-function RingItem({
-  ring,
-  color,
-  complete,
-  gridScale,
-  iconRadius,
+function Controls({
+  range,
+  onChange,
 }: {
-  ring: Ring;
-  color: Color;
-  complete: number;
-  gridScale: GridScale;
-  iconRadius: number;
+  range: Range;
+  onChange: (range: Range) => void;
 }) {
   return (
-    <ListItem sx={{ position: "relative", my: 0.5, pl: 1 }} disablePadding>
-      <ListItemText primary={ring.name} />
-      <ListItemText
-        secondary={gridScaleToString(gridScale, ring.radius)}
-        sx={{ textAlign: "end" }}
-      />
-      <ListItemIcon sx={{ opacity: 0.7, minWidth: 0 }}>
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r={iconRadius}
-            stroke="currentColor"
-            strokeWidth="2"
-          />
-        </svg>
-      </ListItemIcon>
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          bottom: 0,
-          zIndex: -1,
-          backgroundColor: `rgb(${color.r}, ${color.g}, ${color.b})`,
-          borderTopLeftRadius: "8px",
-          borderBottomLeftRadius: "8px",
-          borderTopRightRadius: "20px",
-          borderBottomRightRadius: "20px",
-          width: `${complete * 100}%`,
-          opacity: 0.2,
+    <Stack direction="row" gap={2}>
+      <FormControl>
+        <SmallLabel id="name-label">Name</SmallLabel>
+        <TextField
+          aria-labelledby="name-label"
+          value={range.name}
+          onChange={(e) => onChange({ ...range, name: e.target.value })}
+          size="small"
+        />
+      </FormControl>
+      <FormControl sx={{ minWidth: 60 }}>
+        <SmallLabel>Show Size</SmallLabel>
+        <Switch
+          sx={{ ml: 0, overflow: "visible" }}
+          checked={!range.hideSize}
+          onChange={(_, checked) => onChange({ ...range, hideSize: !checked })}
+        />
+      </FormControl>
+      <RangeTypeButtonGroup
+        value={range.type}
+        onChange={(type) => {
+          onChange({ ...range, type });
         }}
       />
-    </ListItem>
+    </Stack>
   );
-}
-
-function gridScaleToString(scale: GridScale, multiplier = 1) {
-  return `${(multiplier * scale.parsed.multiplier).toFixed(
-    scale.parsed.digits
-  )}${scale.parsed.unit}`;
 }

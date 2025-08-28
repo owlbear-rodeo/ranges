@@ -1,52 +1,87 @@
-import { useEffect, useState } from "react";
-
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import Divider from "@mui/material/Divider";
+import AddRounded from "@mui/icons-material/AddRounded";
 
-import { defaultRanges, getCustomRanges, Range } from "../ranges/ranges";
-
-function useCustomRanges() {
-  const [customRanges, setCustomRanges] = useState<Range[]>(() =>
-    getCustomRanges()
-  );
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("ranges", JSON.stringify(customRanges));
-    } catch (error) {
-      console.warn("Failed to save custom ranges to localStorage:", error);
-    }
-  }, [customRanges]);
-
-  return [customRanges, setCustomRanges] as const;
-}
+import { Range } from "../ranges/ranges";
+import IconButton from "@mui/material/IconButton";
+import CheckRounded from "@mui/icons-material/CheckRounded";
+import EditRounded from "@mui/icons-material/EditRounded";
 
 export function RangeSelector({
   selectedRange,
-  setSelectedRange,
+  customRanges,
+  defaultRanges,
+  onSelect,
+  onAdd,
+  onEdit,
+  isEditing,
+  isCustom,
 }: {
   selectedRange: Range;
-  setSelectedRange: (range: Range) => void;
+  customRanges: Range[];
+  defaultRanges: Range[];
+  onSelect: (range: Range) => void;
+  onAdd: (range: Range) => void;
+  onEdit: () => void;
+  isEditing: boolean;
+  isCustom: boolean;
 }) {
-  const [customRanges] = useCustomRanges();
   const ranges = [...defaultRanges, ...customRanges];
 
+  function onAddRange() {
+    const newRange = {
+      ...selectedRange,
+      id: crypto.randomUUID(),
+      name: `Range ${customRanges.length + 1}`,
+    };
+    onAdd(newRange);
+  }
+
   return (
-    <Select
-      value={selectedRange.id}
-      onChange={(event) => {
-        const range = ranges.find((range) => range.id === event.target.value);
-        if (range) {
-          setSelectedRange(range);
-        }
-      }}
-      size="small"
+    <Stack
+      direction="row"
+      gap={1}
+      alignItems="center"
+      sx={{ mb: 1, position: "relative" }}
     >
-      {ranges.map((range) => (
-        <MenuItem key={range.id} value={range.id}>
-          {range.name}
+      <Select
+        value={selectedRange.id}
+        onChange={(event) => {
+          const range = ranges.find((range) => range.id === event.target.value);
+          if (range) {
+            onSelect(range);
+          }
+        }}
+        renderValue={(value) =>
+          ranges.find((range) => range.id === value)?.name
+        }
+        size="small"
+        fullWidth
+      >
+        {defaultRanges.map((range) => (
+          <MenuItem key={range.id} value={range.id}>
+            {range.name}
+          </MenuItem>
+        ))}
+        {customRanges.length > 0 && <Divider />}
+        {customRanges.map((range) => (
+          <MenuItem key={range.id} value={range.id}>
+            {range.name}
+          </MenuItem>
+        ))}
+        <Divider />
+        <MenuItem onClick={onAddRange} sx={{ justifyContent: "space-between" }}>
+          New Range
+          <AddRounded />
         </MenuItem>
-      ))}
-    </Select>
+      </Select>
+      {isCustom && (
+        <IconButton onClick={onEdit} size="small">
+          {isEditing ? <CheckRounded /> : <EditRounded />}
+        </IconButton>
+      )}
+    </Stack>
   );
 }
