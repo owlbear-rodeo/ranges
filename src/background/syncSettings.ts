@@ -50,14 +50,16 @@ async function syncRangeIfNeeded() {
   if (syncing) {
     return;
   }
-  syncing = true;
-  const metadata = await OBR.scene.getMetadata();
-  const range = metadata[getPluginId("range")];
-  if (range) {
-    return;
+  try {
+    syncing = true;
+    const metadata = await OBR.scene.getMetadata();
+    const range = metadata[getPluginId("range")];
+    if (range) {
+      return;
+    }
+    const lastUsedRange = getLastUsedRange() ?? defaultRanges[0];
+    await OBR.scene.setMetadata({ [getPluginId("range")]: lastUsedRange });
+  } finally {
+    syncing = false;
   }
-
-  const lastUsedRange = getLastUsedRange() ?? defaultRanges[0];
-  await OBR.scene.setMetadata({ [getPluginId("range")]: lastUsedRange });
-  syncing = false;
 }
