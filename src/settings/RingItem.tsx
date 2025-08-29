@@ -1,5 +1,4 @@
 import { type GridScale } from "@owlbear-rodeo/sdk";
-import { useEffect, useState } from "react";
 
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
@@ -9,10 +8,20 @@ import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
 import CloseRounded from "@mui/icons-material/CloseRounded";
 import IconButton from "@mui/material/IconButton";
+import { keyframes } from "@mui/material/styles";
 
 import { type Ring } from "../ranges/ranges";
 import { Color } from "../theme/themes";
 import NumberField from "../util/NumberField";
+
+const slideInRight = keyframes`
+  from {
+    width: 0;
+  }
+  to {
+    width: var(--width);
+  }
+`;
 
 export function RingItem({
   ring,
@@ -33,11 +42,6 @@ export function RingItem({
   onDelete?: () => void;
   ringIndex: number;
 }) {
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   const primary = onChange ? (
     <TextField
       value={ring.name}
@@ -146,6 +150,7 @@ export function RingItem({
         </IconButton>
       )}
       <Box
+        style={{ "--width": `${complete * 100}%` } as React.CSSProperties}
         sx={{
           position: "absolute",
           top: 0,
@@ -157,15 +162,14 @@ export function RingItem({
           borderBottomLeftRadius: "8px",
           borderTopRightRadius: "20px",
           borderBottomRightRadius: "20px",
-          width: isMounted ? `${complete * 100}%` : "0%",
-          transition: onChange
-            ? undefined
-            : (theme) =>
-                theme.transitions.create("width", {
-                  duration: theme.transitions.duration.shorter,
-                  easing: theme.transitions.easing.easeOut,
-                  delay: ringIndex * 100,
-                }),
+          animation: (theme) =>
+            `${slideInRight} ${theme.transitions.duration.shorter}ms ease-out ${
+              ringIndex * 100
+            }ms both`,
+          "@media (prefers-reduced-motion: reduce)": {
+            animation: "none",
+            width: "var(--width)",
+          },
           opacity: 0.2,
         }}
       />
