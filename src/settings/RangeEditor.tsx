@@ -95,6 +95,7 @@ export function RangeEditor({
           fullWidth
           size="small"
           onClick={addRing}
+          disabled={range.rings.length >= 10}
           startIcon={<AddRounded />}
         >
           Add Ring
