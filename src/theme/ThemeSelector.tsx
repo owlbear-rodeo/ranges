@@ -68,7 +68,7 @@ export function ThemeSelector() {
             sx={{
               position: "relative",
               "&:hover .theme-background": {
-                opacity: theme.name === selectedTheme ? 0.7 : 0.4,
+                opacity: theme.name === selectedTheme ? 0.6 : 0.3,
               },
             }}
           >
@@ -77,7 +77,7 @@ export function ThemeSelector() {
               control={
                 <Radio
                   color={
-                    muiTheme.palette.mode === "light" ? "default" : "primary"
+                    muiTheme.palette.mode === "light" ? "default" : "secondary"
                   }
                 />
               }
@@ -103,7 +103,7 @@ export function ThemeSelector() {
                 inset: 0,
                 zIndex: -1,
                 overflow: "hidden",
-                opacity: theme.name === selectedTheme ? 0.6 : 0.3,
+                opacity: theme.name === selectedTheme ? 0.5 : 0.2,
                 transition: "opacity 0.2s ease-in-out",
                 borderRadius: "12px",
               }}

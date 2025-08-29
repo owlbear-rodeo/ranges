@@ -59,8 +59,8 @@ export function RingItem({
             bgcolor: "background.paper",
             backgroundImage: (theme) =>
               theme.palette.mode === "dark"
-                ? "linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1))"
-                : "linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))",
+                ? "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))"
+                : undefined,
           },
         },
       }}
@@ -106,7 +106,7 @@ export function RingItem({
             backgroundImage: (theme) =>
               theme.palette.mode === "dark"
                 ? "linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1))"
-                : "linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))",
+                : undefined,
           },
         },
       }}

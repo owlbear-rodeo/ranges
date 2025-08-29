@@ -19,7 +19,7 @@ export function createThemeAction() {
       OBR.popover.open({
         id: getPluginId("popover/theme"),
         url: "/theme.html",
-        width: 200,
+        width: 240,
         height: 240,
         anchorElementId: elementId,
         anchorOrigin: {
