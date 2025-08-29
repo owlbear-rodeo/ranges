@@ -47,3 +47,17 @@ export function getCustomRanges(): Range[] {
   }
   return [];
 }
+
+export function setCustomRanges(ranges: Range[]) {
+  try {
+    localStorage.setItem("ranges", JSON.stringify(ranges));
+  } catch (error) {
+    console.warn("Failed to save custom ranges to localStorage:", error);
+  }
+}
+
+export function getRange(id: string): Range | undefined {
+  const customRanges = getCustomRanges();
+  const ranges = [...customRanges, ...defaultRanges];
+  return ranges.find((r) => r.id === id);
+}

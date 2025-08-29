@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
-import { defaultRanges, getCustomRanges, Range } from "../ranges/ranges";
-import { RangeEditor } from "./RangeEditor";
+import OBR from "@owlbear-rodeo/sdk";
+
 import Stack from "@mui/material/Stack";
-import { RangeSelector } from "./RangeSelector";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import OBR, { type GridScale } from "@owlbear-rodeo/sdk";
+
+import {
+  defaultRanges,
+  getCustomRanges,
+  setCustomRanges as setStoredCustomRanges,
+  Range,
+} from "../ranges/ranges";
+import { RangeEditor } from "./RangeEditor";
+import { RangeSelector } from "./RangeSelector";
+import { getPluginId } from "../util/getPluginId";
+import { setLastUsedRange } from "./lastUsed";
+import { useOBRContext } from "./OBRContext";
 
 function useCustomRanges() {
   const [customRanges, setCustomRanges] = useState<Range[]>(() =>
@@ -13,20 +23,15 @@ function useCustomRanges() {
   );
 
   useEffect(() => {
-    try {
-      localStorage.setItem("ranges", JSON.stringify(customRanges));
-    } catch (error) {
-      console.warn("Failed to save custom ranges to localStorage:", error);
-    }
+    setStoredCustomRanges(customRanges);
   }, [customRanges]);
 
   return [customRanges, setCustomRanges] as const;
 }
 
 export function Settings() {
-  const [selectedRange, setSelectedRange] = useState<Range>(
-    () => defaultRanges[0]
-  );
+  const { range: defaultRange } = useOBRContext();
+  const [selectedRange, setSelectedRange] = useState<Range>(defaultRange);
   const [editing, setEditing] = useState(false);
   const [customRanges, setCustomRanges] = useCustomRanges();
   const [storageIsAvailable] = useState(() => {
@@ -39,6 +44,37 @@ export function Settings() {
     }
   });
 
+  function onSelectRange(range: Range, edit: boolean = false) {
+    setSelectedRange(range);
+    setLastUsedRange(range);
+    OBR.scene.setMetadata({ [getPluginId("range")]: range });
+    if (edit) {
+      setEditing(true);
+    }
+  }
+
+  function onDeleteRange(range: Range) {
+    setCustomRanges(customRanges.filter((r) => r.id !== range.id));
+    if (range.id === selectedRange.id) {
+      onSelectRange(defaultRanges[0]);
+    }
+    setEditing(false);
+  }
+
+  function onAddRange(range: Range) {
+    setCustomRanges([...customRanges, range]);
+    onSelectRange(range, true);
+  }
+
+  function onChangeRange(range: Range) {
+    setCustomRanges(customRanges.map((r) => (r.id === range.id ? range : r)));
+    if (range.id === selectedRange.id) {
+      setSelectedRange(range);
+      setLastUsedRange(range);
+      OBR.scene.setMetadata({ [getPluginId("range")]: range });
+    }
+  }
+
   if (!storageIsAvailable) {
     return (
       <Alert severity="error" sx={{ height: "258px" }}>
@@ -49,38 +85,14 @@ export function Settings() {
     );
   }
 
-  const [gridScale, setGridScale] = useState<GridScale | null>(null);
-  useEffect(() => {
-    let mounted = true;
-    OBR.scene.grid.getScale().then((scale) => {
-      if (mounted) {
-        setGridScale(scale);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  if (!gridScale) {
-    return null;
-  }
-
   return (
     <Stack sx={{ height: "258px", p: 1, pb: 0 }}>
       <RangeSelector
         selectedRange={selectedRange}
-        onSelect={(range) => {
-          setSelectedRange(range);
-          setEditing(false);
-        }}
+        onSelect={onSelectRange}
         customRanges={customRanges}
         defaultRanges={defaultRanges}
-        onAdd={(range) => {
-          setCustomRanges([...customRanges, range]);
-          setSelectedRange(range);
-          setEditing(true);
-        }}
+        onAdd={onAddRange}
         onEdit={() => {
           setEditing((prev) => !prev);
         }}
@@ -89,13 +101,8 @@ export function Settings() {
       />
       <RangeEditor
         range={selectedRange}
-        onChange={editing ? setSelectedRange : undefined}
-        gridScale={gridScale}
-        onDelete={() => {
-          setCustomRanges(
-            customRanges.filter((range) => range.id !== range.id)
-          );
-        }}
+        onChange={editing ? onChangeRange : undefined}
+        onDelete={editing ? onDeleteRange : undefined}
       />
     </Stack>
   );

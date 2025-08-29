@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { type GridScale } from "@owlbear-rodeo/sdk";
 
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
@@ -24,12 +23,10 @@ export function RangeEditor({
   range,
   onChange,
   onDelete,
-  gridScale,
 }: {
   range: Range;
-  gridScale: GridScale;
   onChange?: (range: Range) => void;
-  onDelete?: () => void;
+  onDelete?: (range: Range) => void;
 }) {
   const [theme] = useState(() => getStoredTheme());
 
@@ -67,7 +64,6 @@ export function RangeEditor({
                 ring={ring}
                 color={color}
                 complete={logComplete}
-                gridScale={gridScale}
                 iconRadius={i + 1}
                 ringIndex={i}
                 onChange={
@@ -118,16 +114,20 @@ function Controls({
 }: {
   range: Range;
   onChange: (range: Range) => void;
-  onDelete: () => void;
+  onDelete: (range: Range) => void;
 }) {
+  const [localName, setLocalName] = useState(range.name);
   return (
     <>
       <Divider sx={{ my: 1 }} />
       <TextField
         label="Name"
         aria-labelledby="name-label"
-        value={range.name}
-        onChange={(e) => onChange({ ...range, name: e.target.value })}
+        value={localName}
+        onChange={(e) =>
+          e.target.value.length < 50 && setLocalName(e.target.value)
+        }
+        onBlur={() => onChange({ ...range, name: localName })}
         size="small"
       />
       <Stack
@@ -167,7 +167,7 @@ function Controls({
         <FormControl>
           <SmallLabel id="delete-label">Delete</SmallLabel>
           <IconButton
-            onClick={onDelete}
+            onClick={() => onDelete(range)}
             color="error"
             aria-labelledby="delete-label"
           >

@@ -1,4 +1,4 @@
-import { type GridScale } from "@owlbear-rodeo/sdk";
+import { useState } from "react";
 
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
@@ -13,6 +13,7 @@ import { keyframes } from "@mui/material/styles";
 import { type Ring } from "../ranges/ranges";
 import { Color } from "../theme/themes";
 import NumberField from "../util/NumberField";
+import { useOBRContext } from "./OBRContext";
 
 const slideInRight = keyframes`
   from {
@@ -27,7 +28,6 @@ export function RingItem({
   ring,
   color,
   complete,
-  gridScale,
   iconRadius,
   onChange,
   onDelete,
@@ -36,16 +36,21 @@ export function RingItem({
   color: Color;
   ring: Ring;
   complete: number;
-  gridScale: GridScale;
   iconRadius: number;
   onChange?: (ring: Ring) => void;
   onDelete?: () => void;
   ringIndex: number;
 }) {
+  const { gridScale } = useOBRContext();
+  const [localName, setLocalName] = useState(ring.name);
+
   const primary = onChange ? (
     <TextField
-      value={ring.name}
-      onChange={(e) => onChange({ ...ring, name: e.target.value })}
+      value={localName}
+      onChange={(e) =>
+        e.target.value.length < 50 && setLocalName(e.target.value)
+      }
+      onBlur={() => onChange({ ...ring, name: localName })}
       size="small"
       slotProps={{
         input: {
@@ -63,6 +68,7 @@ export function RingItem({
     <ListItemText primary={ring.name} />
   );
 
+  const [localRadius, setLocalRadius] = useState(ring.radius);
   const secondary = onChange ? (
     <NumberField
       aria-label="Range"
@@ -75,9 +81,11 @@ export function RingItem({
       textToNumber={(value) => parseFloat(value) / gridScale.parsed.multiplier}
       step={1}
       min={1}
+      max={1000}
       size="small"
-      value={ring.radius}
-      onChange={(value) => onChange({ ...ring, radius: value })}
+      value={localRadius}
+      onChange={(value) => value > 0 && value < 1000 && setLocalRadius(value)}
+      onBlur={() => onChange({ ...ring, radius: localRadius })}
       autoComplete="off"
       sx={{ width: "86px" }}
       slotProps={{
