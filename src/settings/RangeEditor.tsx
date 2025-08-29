@@ -84,6 +84,9 @@ export function RangeEditor({
                       }
                     : undefined
                 }
+                hideLabel={range.hideLabel}
+                hideSize={range.hideSize}
+                rangeType={range.type}
               />
             );
           })}

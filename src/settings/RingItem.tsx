@@ -10,7 +10,7 @@ import CloseRounded from "@mui/icons-material/CloseRounded";
 import IconButton from "@mui/material/IconButton";
 import { keyframes } from "@mui/material/styles";
 
-import { type Ring } from "../ranges/ranges";
+import { type Ring, type RangeType } from "../ranges/ranges";
 import { Color } from "../theme/themes";
 import NumberField from "../util/NumberField";
 import { useOBRContext } from "./OBRContext";
@@ -33,6 +33,9 @@ export function RingItem({
   onChange,
   onDelete,
   ringIndex,
+  hideSize,
+  hideLabel,
+  rangeType,
 }: {
   color: Color;
   ring: Ring;
@@ -41,6 +44,9 @@ export function RingItem({
   onChange?: (ring: Ring) => void;
   onDelete?: () => void;
   ringIndex: number;
+  hideSize?: boolean;
+  hideLabel?: boolean;
+  rangeType: RangeType;
 }) {
   const { gridScale } = useOBRContext();
   const [localName, setLocalName] = useState(ring.name);
@@ -66,7 +72,11 @@ export function RingItem({
       }}
     />
   ) : (
-    <ListItemText primary={ring.name} />
+    <ListItemText
+      primary={`${hideLabel ? "" : ring.name}${
+        !hideLabel && !hideSize && ring.name ? " " : ""
+      }${hideSize ? "" : flattenGridScale(gridScale, ring.radius)}`}
+    />
   );
 
   const [localRadius, setLocalRadius] = useState(ring.radius);
@@ -111,12 +121,12 @@ export function RingItem({
         },
       }}
     />
-  ) : (
+  ) : hideSize ? (
     <ListItemText
       secondary={flattenGridScale(gridScale, ring.radius)}
       sx={{ textAlign: "end" }}
     />
-  );
+  ) : null;
 
   return (
     <ListItem
@@ -141,13 +151,24 @@ export function RingItem({
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <circle
-              cx="12"
-              cy="12"
-              r={iconRadius}
-              stroke="currentColor"
-              strokeWidth="2"
-            />
+            {rangeType === "circle" ? (
+              <circle
+                cx="12"
+                cy="12"
+                r={iconRadius}
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+            ) : (
+              <rect
+                x={12 - iconRadius}
+                y={12 - iconRadius}
+                width={iconRadius * 2}
+                height={iconRadius * 2}
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+            )}
           </svg>
         </ListItemIcon>
       )}
