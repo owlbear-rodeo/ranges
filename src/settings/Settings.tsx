@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import OBR from "@owlbear-rodeo/sdk";
 
 import Stack from "@mui/material/Stack";
@@ -75,6 +75,11 @@ export function Settings() {
     }
   }
 
+  const unavailableRange = useMemo(() => {
+    const ranges = [...customRanges, ...defaultRanges];
+    return !ranges.find((r) => r.id === selectedRange.id);
+  }, [customRanges, selectedRange]);
+
   if (!storageIsAvailable) {
     return (
       <Alert severity="error" sx={{ height: "258px" }}>
@@ -86,7 +91,7 @@ export function Settings() {
   }
 
   return (
-    <Stack sx={{ height: "258px", p: 1, pb: 0 }}>
+    <Stack sx={{ height: "258px", p: 1, pb: 0, gap: 1 }}>
       <RangeSelector
         selectedRange={selectedRange}
         onSelect={onSelectRange}
@@ -99,6 +104,11 @@ export function Settings() {
         isEditing={editing}
         isCustom={customRanges.some((r) => r.id === selectedRange.id)}
       />
+      {unavailableRange && (
+        <Alert severity="warning">
+          Selected range not found on this device. Please select a new one.
+        </Alert>
+      )}
       <RangeEditor
         range={selectedRange}
         onChange={editing ? onChangeRange : undefined}

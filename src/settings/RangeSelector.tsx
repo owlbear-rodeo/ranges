@@ -48,7 +48,7 @@ export function RangeSelector({
       direction="row"
       gap={1}
       alignItems="center"
-      sx={{ mb: 1, position: "relative" }}
+      sx={{ position: "relative" }}
     >
       <Select
         value={selectedRange.id}
