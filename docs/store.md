@@ -1,6 +1,6 @@
 ---
 title: Ranges
-description: Circular distance tool that cuts to the heart of measuring ranges without the dagger of a complex setup
+description: A distance tool that cuts to the heart of measuring ranges without the dagger of a complex setup
 author: Owlbear Rodeo
 image: https://raw.githubusercontent.com/owlbear-rodeo/ranges/main/docs/header.jpg
 icon: https://ranges.owlbear.rodeo/logo.png
@@ -13,7 +13,7 @@ learn-more: https://extensions.owlbear.rodeo/ranges
 
 # Ranges
 
-A quick and easy tool for measuring circular distances on maps. Check ranges with a simple click and drag - no need to dagger through complex menus or settings. Perfect for when you need rough distance estimates at the heart of your workflow.
+Check ranges with a simple click and drag - no need to dagger through complex menus or settings. Perfect for when you need rough distance estimates at the heart of your workflow.
 
 ## Use the tool
 
@@ -31,6 +31,18 @@ As well as the base theme there are three color themes that target specific colo
 These themes can be found using the Range Theme action.
 
 ![Range themes](https://raw.githubusercontent.com/owlbear-rodeo/ranges/main/docs/themes.jpg)
+
+## Adjust Settings
+
+The GM can control the labels, shape and size of a range.
+
+To do this use the Range Settings action.
+
+![Range settings](https://raw.githubusercontent.com/owlbear-rodeo/ranges/main/docs/settings.jpg)
+
+You can then pick from a list of presets or create your own range.
+
+When creating your own range you can give it a name, toggle showing the ring labels or sizes and change the shape between a circle or square.
 
 **Support**
 
