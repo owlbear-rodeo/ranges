@@ -8,6 +8,8 @@ import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 
 import DeleteRounded from "@mui/icons-material/DeleteRounded";
 import AddRounded from "@mui/icons-material/AddRounded";
@@ -23,15 +25,11 @@ export function RangeEditor({
   onChange,
   onDelete,
   gridScale,
-  isCustom,
-  isEditing,
 }: {
   range: Range;
   gridScale: GridScale;
   onChange?: (range: Range) => void;
   onDelete?: () => void;
-  isCustom?: boolean;
-  isEditing?: boolean;
 }) {
   const [theme] = useState(() => getStoredTheme());
 
@@ -56,7 +54,7 @@ export function RangeEditor({
   const logMaxRadius = Math.log(maxRadius + 1);
 
   return (
-    <Stack gap={1} sx={{ overflowY: "auto", pb: 0.5 }}>
+    <Stack gap={1} sx={{ overflowY: "auto", pb: 1 }}>
       <Box sx={{ flexGrow: 1 }}>
         <List disablePadding>
           {range.rings.map((ring, i, rings) => {
@@ -106,17 +104,8 @@ export function RangeEditor({
           Add Ring
         </Button>
       )}
-      {onChange && <Controls range={range} onChange={onChange} />}
-      {isCustom && isEditing && (
-        <Button
-          fullWidth
-          size="small"
-          onClick={onDelete}
-          startIcon={<DeleteRounded />}
-          color="error"
-        >
-          Delete
-        </Button>
+      {onChange && onDelete && (
+        <Controls range={range} onChange={onChange} onDelete={onDelete} />
       )}
     </Stack>
   );
@@ -125,35 +114,67 @@ export function RangeEditor({
 function Controls({
   range,
   onChange,
+  onDelete,
 }: {
   range: Range;
   onChange: (range: Range) => void;
+  onDelete: () => void;
 }) {
   return (
-    <Stack direction="row" gap={2}>
-      <FormControl>
-        <SmallLabel id="name-label">Name</SmallLabel>
-        <TextField
-          aria-labelledby="name-label"
-          value={range.name}
-          onChange={(e) => onChange({ ...range, name: e.target.value })}
-          size="small"
-        />
-      </FormControl>
-      <FormControl sx={{ minWidth: 60 }}>
-        <SmallLabel>Show Size</SmallLabel>
-        <Switch
-          sx={{ ml: 0, overflow: "visible" }}
-          checked={!range.hideSize}
-          onChange={(_, checked) => onChange({ ...range, hideSize: !checked })}
-        />
-      </FormControl>
-      <RangeTypeButtonGroup
-        value={range.type}
-        onChange={(type) => {
-          onChange({ ...range, type });
-        }}
+    <>
+      <Divider sx={{ my: 1 }} />
+      <TextField
+        label="Name"
+        aria-labelledby="name-label"
+        value={range.name}
+        onChange={(e) => onChange({ ...range, name: e.target.value })}
+        size="small"
       />
-    </Stack>
+      <Stack
+        direction="row"
+        gap={1}
+        sx={{ mt: 0.5 }}
+        width="100%"
+        alignItems="start"
+        justifyContent="space-around"
+      >
+        <FormControl sx={{ minWidth: 68 }}>
+          <SmallLabel>Show Label</SmallLabel>
+          <Switch
+            sx={{ ml: 0, overflow: "visible" }}
+            checked={!range.hideLabel}
+            onChange={(_, checked) =>
+              onChange({ ...range, hideLabel: !checked })
+            }
+          />
+        </FormControl>
+        <FormControl sx={{ minWidth: 68 }}>
+          <SmallLabel>Show Size</SmallLabel>
+          <Switch
+            sx={{ ml: 0, overflow: "visible" }}
+            checked={!range.hideSize}
+            onChange={(_, checked) =>
+              onChange({ ...range, hideSize: !checked })
+            }
+          />
+        </FormControl>
+        <RangeTypeButtonGroup
+          value={range.type}
+          onChange={(type) => {
+            onChange({ ...range, type });
+          }}
+        />
+        <FormControl>
+          <SmallLabel id="delete-label">Delete</SmallLabel>
+          <IconButton
+            onClick={onDelete}
+            color="error"
+            aria-labelledby="delete-label"
+          >
+            <DeleteRounded />
+          </IconButton>
+        </FormControl>
+      </Stack>
+    </>
   );
 }

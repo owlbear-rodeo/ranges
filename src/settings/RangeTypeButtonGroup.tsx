@@ -26,12 +26,15 @@ export function RangeTypeButtonGroup({
         exclusive
         aria-labelledby="range-type-label"
         size="small"
+        sx={{
+          my: 0.5,
+        }}
       >
         <ToggleButton value="circle" aria-label="Circle">
-          <Circle />
+          <Circle fontSize="small" />
         </ToggleButton>
         <ToggleButton value="square" aria-label="Square">
-          <Square />
+          <Square fontSize="small" />
         </ToggleButton>
       </ToggleButtonGroup>
     </Stack>

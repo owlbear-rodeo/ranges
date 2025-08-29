@@ -41,7 +41,7 @@ export function Settings() {
 
   if (!storageIsAvailable) {
     return (
-      <Alert severity="error" sx={{ height: "256px" }}>
+      <Alert severity="error" sx={{ height: "258px" }}>
         <AlertTitle>Storage is not available</AlertTitle>
         The plugin is unable to change the range. Please enable third-party
         cookies.
@@ -67,7 +67,7 @@ export function Settings() {
   }
 
   return (
-    <Stack sx={{ height: "256px", p: 1, pb: 0 }}>
+    <Stack sx={{ height: "258px", p: 1, pb: 0 }}>
       <RangeSelector
         selectedRange={selectedRange}
         onSelect={(range) => {
@@ -91,8 +91,6 @@ export function Settings() {
         range={selectedRange}
         onChange={editing ? setSelectedRange : undefined}
         gridScale={gridScale}
-        isCustom={customRanges.some((r) => r.id === selectedRange.id)}
-        isEditing={editing}
         onDelete={() => {
           setCustomRanges(
             customRanges.filter((range) => range.id !== range.id)
