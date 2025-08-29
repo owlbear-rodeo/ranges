@@ -79,7 +79,6 @@ export function RingItem({
     />
   );
 
-  const [localRadius, setLocalRadius] = useState(ring.radius);
   const secondary = onChange ? (
     <NumberField
       aria-label="Range"
@@ -94,9 +93,8 @@ export function RingItem({
       min={1}
       max={1000}
       size="small"
-      value={localRadius}
-      onChange={(value) => value > 0 && value < 1000 && setLocalRadius(value)}
-      onBlur={() => onChange({ ...ring, radius: localRadius })}
+      value={ring.radius}
+      onChange={(value) => onChange({ ...ring, radius: value })}
       autoComplete="off"
       sx={{ width: "86px" }}
       slotProps={{
