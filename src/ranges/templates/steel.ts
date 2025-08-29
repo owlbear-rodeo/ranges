@@ -17,17 +17,17 @@ export const steel: Range = {
     },
     {
       radius: 5,
-      name: "Ranged 5",
+      name: "Ranged",
       id: "steel-ranged",
     },
     {
       radius: 10,
-      name: "Ranged 10",
+      name: "Ranged",
       id: "steel-ranged-2",
     },
     {
       radius: 12,
-      name: "Ranged 12",
+      name: "Ranged",
       id: "steel-ranged-3",
     },
   ],

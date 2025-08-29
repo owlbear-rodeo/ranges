@@ -17,6 +17,7 @@ import { getMetadata } from "../util/getMetadata";
 import { Color, getStoredTheme, Theme } from "../theme/themes";
 import { RangeType, Ring, Range } from "../ranges/ranges";
 import { fallback } from "../ranges/templates/fallback";
+import { flattenGridScale } from "../util/flattenGridScale";
 
 let rangeInteraction: InteractionManager<Item[]> | null = null;
 let tokenInteraction: InteractionManager<Item> | null = null;
@@ -42,27 +43,23 @@ function getLabelTextColor(color: Color, threshold: number) {
 
 function getRing(
   center: Vector2,
-  ring: Ring,
-  color: Color,
-  type: RangeType,
-  dpi: number
+  offset: Vector2,
+  size: number,
+  name: string,
+  color: string,
+  type: RangeType
 ) {
-  const radius = getRadiusForRing(ring, dpi);
-  let offset = { x: 0, y: 0 };
-  if (type === "square") {
-    offset = { x: radius, y: radius };
-  }
   return buildShape()
     .fillOpacity(0)
     .strokeWidth(2)
     .strokeOpacity(0.9)
-    .strokeColor(getColorString(color))
+    .strokeColor(color)
     .strokeDash([10, 10])
     .shapeType(type === "square" ? "RECTANGLE" : "CIRCLE")
     .position(Math2.subtract(center, offset))
-    .width(radius * 2)
-    .height(radius * 2)
-    .name(ring.name)
+    .width(size)
+    .height(size)
+    .name(name)
     .metadata({
       [getPluginId("offset")]: offset,
     })
@@ -71,17 +68,21 @@ function getRing(
     .build();
 }
 
-function getLabel(center: Vector2, ring: Ring, color: Color, dpi: number) {
-  const radius = getRadiusForRing(ring, dpi);
-  const offset = { x: 0, y: radius + labelOffset };
+function getLabel(
+  center: Vector2,
+  offset: Vector2,
+  text: string,
+  backgroundColor: string,
+  textColor: string
+) {
   return buildLabel()
-    .fillColor(getLabelTextColor(color, 180))
+    .fillColor(textColor)
     .fillOpacity(1.0)
-    .plainText(ring.name)
+    .plainText(text)
     .position(Math2.subtract(center, offset))
     .pointerDirection("UP")
     .backgroundOpacity(0.8)
-    .backgroundColor(getColorString(color))
+    .backgroundColor(backgroundColor)
     .padding(8)
     .cornerRadius(20)
     .pointerHeight(0)
@@ -187,12 +188,37 @@ async function getRings(
   range: Range
 ): Promise<Item[]> {
   const dpi = await OBR.scene.grid.getDpi();
+  const gridScale = await OBR.scene.grid.getScale();
   const items = [];
   for (let i = 0; i < range.rings.length; i++) {
-    const color = theme.colors[i % theme.colors.length];
+    const baseColor = theme.colors[i % theme.colors.length];
+    const color = getColorString(baseColor);
+    const textColor = getLabelTextColor(baseColor, 180);
     const ring = range.rings[i];
-    items.push(getRing(center, ring, color, range.type, dpi));
-    items.push(getLabel(center, ring, color, dpi));
+    const radius = getRadiusForRing(ring, dpi);
+    let ringOffset = { x: 0, y: 0 };
+    if (range.type === "square") {
+      ringOffset = { x: radius, y: radius };
+    }
+    items.push(
+      getRing(center, ringOffset, radius * 2, ring.name, color, range.type)
+    );
+    const labelItemOffset = { x: 0, y: radius + labelOffset };
+    let labelText = "";
+    if (!range.hideLabel) {
+      labelText += ring.name;
+    }
+    if (!range.hideSize) {
+      labelText += `${labelText ? " " : ""}${flattenGridScale(
+        gridScale,
+        ring.radius
+      )}`;
+    }
+    if (labelText) {
+      items.push(
+        getLabel(center, labelItemOffset, labelText, color, textColor)
+      );
+    }
   }
 
   return items;

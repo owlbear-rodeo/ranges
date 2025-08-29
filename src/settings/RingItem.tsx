@@ -14,6 +14,7 @@ import { type Ring } from "../ranges/ranges";
 import { Color } from "../theme/themes";
 import NumberField from "../util/NumberField";
 import { useOBRContext } from "./OBRContext";
+import { flattenGridScale } from "../util/flattenGridScale";
 
 const slideInRight = keyframes`
   from {
@@ -112,9 +113,7 @@ export function RingItem({
     />
   ) : (
     <ListItemText
-      secondary={`${(ring.radius * gridScale.parsed.multiplier).toFixed(
-        gridScale.parsed.digits
-      )}${gridScale.parsed.unit}`}
+      secondary={flattenGridScale(gridScale, ring.radius)}
       sx={{ textAlign: "end" }}
     />
   );
