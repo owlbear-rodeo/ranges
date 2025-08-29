@@ -12,6 +12,7 @@ export function createSettingsAction() {
         filter: {
           activeTools: ["rodeo.owlbear.tool/measure"],
           permissions: ["RULER_CREATE"],
+          roles: ["GM"],
         },
       },
     ],
