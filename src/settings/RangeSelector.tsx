@@ -18,6 +18,7 @@ export function RangeSelector({
   onEdit,
   isEditing,
   isCustom,
+  outdatedRange,
 }: {
   selectedRange: Range;
   customRanges: Range[];
@@ -27,6 +28,7 @@ export function RangeSelector({
   onEdit: () => void;
   isEditing: boolean;
   isCustom: boolean;
+  outdatedRange: boolean;
 }) {
   const ranges = [...defaultRanges, ...customRanges];
 
@@ -51,7 +53,7 @@ export function RangeSelector({
       sx={{ position: "relative" }}
     >
       <Select
-        value={selectedRange.id}
+        value={outdatedRange ? undefined : selectedRange.id}
         onChange={(event) => {
           const range = ranges.find((range) => range.id === event.target.value);
           if (range) {
@@ -87,7 +89,7 @@ export function RangeSelector({
           <AddRounded />
         </MenuItem>
       </Select>
-      {isCustom && (
+      {isCustom && !outdatedRange && (
         <IconButton onClick={onEdit} size="small">
           {isEditing ? <CheckRounded /> : <EditRounded />}
         </IconButton>

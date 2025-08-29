@@ -80,6 +80,16 @@ export function Settings() {
     return !ranges.find((r) => r.id === selectedRange.id);
   }, [customRanges, selectedRange]);
 
+  const outdatedRange = useMemo(() => {
+    const customRange = customRanges.find((r) => r.id === selectedRange.id);
+    if (!customRange) {
+      return false;
+    }
+    const isEqual =
+      JSON.stringify(customRange) === JSON.stringify(selectedRange);
+    return !isEqual;
+  }, [customRanges, selectedRange]);
+
   if (!storageIsAvailable) {
     return (
       <Alert severity="error" sx={{ height: "258px" }}>
@@ -102,11 +112,21 @@ export function Settings() {
           setEditing((prev) => !prev);
         }}
         isEditing={editing}
-        isCustom={customRanges.some((r) => r.id === selectedRange.id)}
+        isCustom={
+          !outdatedRange && customRanges.some((r) => r.id === selectedRange.id)
+        }
+        outdatedRange={outdatedRange}
       />
       {unavailableRange && (
         <Alert severity="warning">
-          Selected range not found on this device. Please select a new one.
+          "{selectedRange.name}" not found on this device. Please select a new
+          one.
+        </Alert>
+      )}
+      {outdatedRange && (
+        <Alert severity="warning">
+          "{selectedRange.name}" out of sync with saved range. Select a new
+          range to update.
         </Alert>
       )}
       <RangeEditor
